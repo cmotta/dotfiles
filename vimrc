@@ -12,6 +12,9 @@ set showcmd       " display incomplete commands
 set incsearch     " do incremental searching
 set laststatus=2  " Always display the status line
 set autowrite     " Automatically :write before running commands
+set t_Co=256
+set hlsearch "highlight matched search terms
+set ttymouse=xterm2 "fix mouse in terminalUX
 
 " Switch syntax highlighting on, when the terminal has colors
 " Also switch on highlighting the last used search pattern.
@@ -141,3 +144,35 @@ let g:syntastic_check_on_open=1
 if filereadable($HOME . "/.vimrc.local")
   source ~/.vimrc.local
 endif
+"-- Putting netrw to work properly 
+" Toggle Vexplore with Ctrl-E
+function! ToggleVExplorer()
+  if exists("t:expl_buf_num")
+      let expl_win_num = bufwinnr(t:expl_buf_num)
+      if expl_win_num != -1
+          let cur_win_nr = winnr()
+          exec expl_win_num . 'wincmd w'
+          close
+          exec cur_win_nr . 'wincmd w'
+          unlet t:expl_buf_num
+      else
+          unlet t:expl_buf_num
+      endif
+  else
+      exec '1wincmd w'
+      Vexplore
+      let t:expl_buf_num = bufnr("%")
+  endif
+endfunction
+map <silent> <C-E> :call ToggleVExplorer()<CR>
+
+" Hit enter in the file browser to open the selected
+" file with :vsplit to the right of the browser.
+let g:netrw_browse_split = 4
+let g:netrw_altv = 1
+
+" Default to tree mode
+let g:netrw_liststyle=3
+
+" Change directory to the current buffer when opening files.
+set autochdir
