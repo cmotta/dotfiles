@@ -23,3 +23,8 @@
   path = .gitconfig.local
 [commit]
   template = ~/.gitmessage
+[credential]
+	helper = osxkeychain
+[user]
+	name = cmotta
+	email = motta.caio@gmail.com
