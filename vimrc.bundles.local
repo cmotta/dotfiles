@@ -1,0 +1,4 @@
+Bundle 'flazz/vim-colorschemes'
+Bundle 'bling/vim-airline'
+Bundle 'vim-ruby/vim-ruby'
+Bundle 'parkr/vim-jekyll'
