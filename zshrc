@@ -1,3 +1,13 @@
+# modify the prompt to contain git branch name if applicable
+git_prompt_info() {
+  ref=$(git symbolic-ref HEAD 2> /dev/null)
+  if [[ -n $ref ]]; then
+    echo " %{$fg_bold[green]%}${ref#refs/heads/}%{$reset_color%}"
+  fi
+}
+setopt promptsubst
+export PS1='${SSH_CONNECTION+"%{$fg_bold[green]%}%n@%m:"}%{$fg_bold[blue]%}%c%{$reset_color%}$(git_prompt_info) %# '
+
 # load our own completion functions
 fpath=(~/.zsh/completion $fpath)
 
@@ -5,73 +15,86 @@ fpath=(~/.zsh/completion $fpath)
 autoload -U compinit
 compinit
 
+# load custom executable functions
 for function in ~/.zsh/functions/*; do
   source $function
 done
 
-# automatically enter directories without cd
-setopt auto_cd
+# makes color constants available
+autoload -U colors
+colors
 
-# use vim as the visual editor
-export VISUAL=vim
-export EDITOR=$VISUAL
+# enable colored output from ls, etc
+export CLICOLOR=1
+
+# history settings
+setopt hist_ignore_all_dups inc_append_history
+HISTFILE=~/.zhistory
+HISTSIZE=4096
+SAVEHIST=4096
+
+# awesome cd movements from zshkit
+setopt autocd autopushd pushdminus pushdsilent pushdtohome cdablevars
+DIRSTACKSIZE=5
+
+# Enable extended globbing
+setopt extendedglob
+
+# Allow [ or ] whereever you want
+unsetopt nomatch
 
 # vi mode
 bindkey -v
 bindkey "^F" vi-cmd-mode
 bindkey jj vi-cmd-mode
 
-# use incremental search
-bindkey "^R" history-incremental-search-backward
-
-# add some readline keys back
+# handy keybindings
 bindkey "^A" beginning-of-line
 bindkey "^E" end-of-line
-
-# handy keybindings
+bindkey "^R" history-incremental-search-backward
 bindkey "^P" history-search-backward
 bindkey "^Y" accept-and-hold
 bindkey "^N" insert-last-word
 bindkey -s "^T" "^[Isudo ^[A" # "t" for "toughguy"
 
-# expand functions in the prompt
-setopt prompt_subst
-
-# prompt
-export PS1='[${SSH_CONNECTION+"%n@%m:"}%~] '
-
-# ignore duplicate history entries
-setopt histignoredups
-
-# keep TONS of history
-export HISTSIZE=4096
-
-# look for ey config in project dirs
-export EYRC=./.eyrc
-
-# automatically pushd
-setopt auto_pushd
-export dirstacksize=5
-
-# awesome cd movements from zshkit
-setopt AUTOCD
-setopt AUTOPUSHD PUSHDMINUS PUSHDSILENT PUSHDTOHOME
-setopt cdablevars
-
-# Try to correct command line spelling
-setopt CORRECT CORRECT_ALL
-
-# Enable extended globbing
-setopt EXTENDED_GLOB
-
-# Allow [ or ] whereever you want
-unsetopt nomatch
-export PATH=/Users/cmotta/.rbenv/bin:/Users/cmotta/.bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/usr/local/sbin:/opt/X11/bin
-eval "$(rbenv init -)"
 # aliases
 [[ -f ~/.aliases ]] && source ~/.aliases
 
+# extra files in ~/.zsh/configs/pre , ~/.zsh/configs , and ~/.zsh/configs/post
+# these are loaded first, second, and third, respectively.
+_load_settings() {
+  _dir="$1"
+  if [ -d "$_dir" ]; then
+    if [ -d "$_dir/pre" ]; then
+      for config in "$_dir"/pre/**/*(N-.); do
+        . $config
+      done
+    fi
+
+    for config in "$_dir"/**/*(N-.); do
+      case "$config" in
+        "$_dir"/pre/*)
+          :
+          ;;
+        "$_dir"/post/*)
+          :
+          ;;
+        *)
+          if [ -f $config ]; then
+            . $config
+          fi
+          ;;
+      esac
+    done
+
+    if [ -d "$_dir/post" ]; then
+      for config in "$_dir"/post/**/*(N-.); do
+        . $config
+      done
+    fi
+  fi
+}
+_load_settings "$HOME/.zsh/configs"
+
 # Local config
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
-
-

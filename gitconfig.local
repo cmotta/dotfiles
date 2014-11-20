@@ -1,0 +1,5 @@
+[credential]
+	helper = osxkeychain
+[user]
+	name = cmotta
+	email = motta.caio@gmail.com
