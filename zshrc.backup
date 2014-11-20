@@ -66,12 +66,13 @@ setopt EXTENDED_GLOB
 
 # Allow [ or ] whereever you want
 unsetopt nomatch
-export PATH=/Users/cmotta/.rbenv/bin:/Users/cmotta/.bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/usr/local/sbin:/opt/X11/bin
-eval "$(rbenv init -)"
+
+# ANDROID_HOME
+export ANDROID_HOME=/Users/cmotta/Code/ADT/sdk
+export PATH=$PATH:$ANDROID_HOME
+
 # aliases
 [[ -f ~/.aliases ]] && source ~/.aliases
 
 # Local config
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
-
-

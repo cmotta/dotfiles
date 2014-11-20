@@ -26,7 +26,7 @@ Bundle 'vim-scripts/tComment'
 Bundle 'bling/vim-airline'
 Bundle 'flazz/vim-colorschemes'
 Bundle 'vim-ruby/vim-ruby'
-
+Bundle 'parkr/vim-jekyll'
 
 if filereadable(expand("~/.vimrc.bundles.local"))
   source ~/.vimrc.bundles.local
