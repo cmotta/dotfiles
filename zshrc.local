@@ -32,3 +32,7 @@ setopt EXTENDED_GLOB
 unsetopt nomatch
 export PATH=/Users/cmotta/.rbenv/bin:/Users/cmotta/.bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/usr/local/sbin:/opt/X11/bin
 eval "$(rbenv init -)"
+
+bindkey -e
+bindkey '^[[1;9C' forward-word
+bindkey '^[[1;9D' backward-word
