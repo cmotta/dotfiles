@@ -1,8 +1,3 @@
-[alias]
-  l = log --pretty=colored
-[pretty]
-  colored = format:%Cred%h%Creset %s %Cgreen(%cr) %C(bold blue)%an%Creset
-
 [credential]
 	helper = osxkeychain
 [user]
