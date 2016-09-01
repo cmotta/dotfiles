@@ -1,5 +1,12 @@
 " Airline Configs
-let g:airline_theme='base16'
+let g:airline_theme='raven'
+
+colorscheme Tomorrow-Night
+
+" AutoCompletion for Python
+let g:airline_exclude_preview = 1
+" close command explanation
+autocmd CompleteDone * pclose
 
 filetype plugin indent on
 
@@ -40,3 +47,5 @@ augroup myfiletypes
    autocmd FileType ruby,eruby,yaml setlocal ai sw=2 sts=2 et
    autocmd FileType ruby,eruby,yaml setlocal path+=lib
 augroup END
+
+set clipboard=unnamed

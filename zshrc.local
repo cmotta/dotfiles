@@ -10,6 +10,10 @@ setopt histignoredups
 # keep TONS of history
 export HISTSIZE=4096
 
+# Fix for Six Version on OSX El Capitan
+export PYTHONPATH=/Library/Python/2.7/site-packages
+
+
 # look for ey config in project dirs
 export EYRC=./.eyrc
 
@@ -33,6 +37,9 @@ unsetopt nomatch
 export PATH=/Users/cmotta/.rbenv/bin:/Users/cmotta/.bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/usr/local/sbin:/opt/X11/bin
 eval "$(rbenv init -)"
 
-bindkey -e
-bindkey '^[[1;9C' forward-word
-bindkey '^[[1;9D' backward-word
+#bindkey -e
+#bindkey '^[[1;9C' forward-word
+#bindkey '^[[1;9D' backward-word
+
+# AWS CLI autocomplete
+source /usr/local/share/zsh/site-functions/_aws

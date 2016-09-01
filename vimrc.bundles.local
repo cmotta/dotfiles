@@ -1,5 +1,5 @@
 Plug 'flazz/vim-colorschemes'
 Plug 'bling/vim-airline'
-Plug 'vim-ruby/vim-ruby'
 Plug 'parkr/vim-jekyll'
 Plug 'scrooloose/syntastic'
+Plug 'Valloric/YouCompleteMe'
