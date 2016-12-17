@@ -99,13 +99,8 @@ _load_settings "$HOME/.zsh/configs"
 
 # Local config
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
-
-# The next line updates PATH for the Google Cloud SDK.
-source '/Users/cmotta/google-cloud-sdk/path.zsh.inc'
-
-# The next line enables shell command completion for gcloud.
-source '/Users/cmotta/google-cloud-sdk/completion.zsh.inc'
 export PATH="/usr/local/bin:$PATH"
 
 export NVM_DIR="/Users/cmotta/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
+
