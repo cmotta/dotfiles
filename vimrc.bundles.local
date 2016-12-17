@@ -1,5 +1,6 @@
 Plug 'flazz/vim-colorschemes'
-Plug 'bling/vim-airline'
+Plug 'vim-airline/vim-airline-themes'
 Plug 'parkr/vim-jekyll'
 Plug 'scrooloose/syntastic'
 Plug 'Valloric/YouCompleteMe'
+Plug 'vimwiki/vimwiki'
