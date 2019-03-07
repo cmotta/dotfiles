@@ -17,3 +17,6 @@ alias path='echo $PATH | tr -s ":" "\n"'
 
 # Include custom aliases
 [[ -f ~/.aliases.local ]] && source ~/.aliases.local
+
+# Colorize tree, show last update, sort by it
+alias tree="tree -Ct -L 1 --dirsfirst"

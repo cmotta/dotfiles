@@ -6,12 +6,13 @@ setopt prompt_subst
 
 # ignore duplicate history entries
 setopt histignoredups
+export HISTCONTROL=$HISTCONTROL${HISTCONTROL+:}ignoredups
 
 # keep TONS of history
 export HISTSIZE=4096
 
-# Fix for Six Version on OSX El Capitan
-export PYTHONPATH=/Library/Python/2.7/site-packages
+# don't keep exports
+export HISTIGNORE=${HISTIGNORE:-"shutdown*:halt*:poweroff*:hibernate*:rm -rf*"}
 
 
 # look for ey config in project dirs
@@ -27,7 +28,9 @@ setopt AUTOPUSHD PUSHDMINUS PUSHDSILENT PUSHDTOHOME
 setopt cdablevars
 
 # Try to correct command line spelling
-setopt CORRECT CORRECT_ALL
+setopt CORRECT
+alias vim='nocorrect vim' 
+alias sam='nocorrect vim'
 
 # Enable extended globbing
 setopt EXTENDED_GLOB
@@ -41,9 +44,6 @@ eval "$(rbenv init -)"
 #bindkey '^[[1;9C' forward-word
 #bindkey '^[[1;9D' backward-word
 
-# AWS CLI autocomplete
-source /usr/local/share/zsh/site-functions/_aws
-
 # The next line updates PATH for the Google Cloud SDK.
 if [ -f /usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/path.zsh.inc ]; then
   source '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/path.zsh.inc'
@@ -53,3 +53,16 @@ fi
 if [ -f /usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/completion.zsh.inc ]; then
   source '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/completion.zsh.inc'
 fi
+
+# AWS CLI autocomplete
+source '/usr/local/bin/aws_zsh_completer.sh'
+
+# Set $GOPATH
+export GOPATH=$HOME/Code
+
+
+# pyenv - To manage python enviroment stuff
+if which pyenv > /dev/null; then eval "$(pyenv init -)"; fi
+
+if which pyenv-virtualenv-init > /dev/null; then eval "$(pyenv virtualenv-init  -)"; fi
+eval "$(pyenv virtualenv-init -)"
