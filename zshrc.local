@@ -1,3 +1,5 @@
+# load homebrew
+eval "$(/opt/homebrew/bin/brew shellenv)"
 # expand functions in the prompt
 setopt prompt_subst
 
@@ -35,10 +37,6 @@ alias sam='nocorrect vim'
 # Enable extended globbing
 setopt EXTENDED_GLOB
 
-# Allow [ or ] whereever you want
-unsetopt nomatch
-export PATH=/Users/cmotta/.rbenv/bin:/Users/cmotta/.bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/usr/local/sbin:/opt/X11/bin
-eval "$(rbenv init -)"
 
 #bindkey -e
 #bindkey '^[[1;9C' forward-word
@@ -54,12 +52,13 @@ if [ -f /usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/completion.
   source '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/completion.zsh.inc'
 fi
 
-# AWS CLI autocomplete
-source '/usr/local/bin/aws_zsh_completer.sh'
+# Setup AWS CLI completion
+autoload bashcompinit && bashcompinit
+autoload -Uz compinit && compinit
+complete -C '/usr/local/bin/aws_completer' aws
 
 # Set $GOPATH
 export GOPATH=$HOME/Code
-
 
 # pyenv - To manage python enviroment stuff
 if which pyenv > /dev/null; then eval "$(pyenv init -)"; fi
