@@ -1,0 +1,38 @@
+# Machine-local zsh configuration
+# This file is sourced by ~/.zshrc after all other configs.
+
+# Homebrew (uncomment for macOS):
+# eval "$(/opt/homebrew/bin/brew shellenv)"
+
+# Go (uncomment and adjust paths):
+# export GOROOT="$(brew --prefix golang)/libexec"
+# export GOPATH=$HOME/go
+# export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
+
+# pyenv (uncomment to enable):
+# export PYENV_ROOT="$HOME/.pyenv"
+# [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+# if which pyenv > /dev/null; then eval "$(pyenv init - zsh)"; fi
+
+# fnm — Node version manager (uncomment for servers using fnm):
+# if [ -d "$HOME/.local/share/fnm" ]; then
+#   export PATH="$HOME/.local/share/fnm:$PATH"
+#   eval "$(fnm env --use-on-cd --shell zsh)"
+# fi
+
+# uv — Python toolchain + completions (uncomment for servers using uv):
+# if [ -d "$HOME/.local/bin" ]; then
+#   export PATH="$HOME/.local/bin:$PATH"
+#   eval "$(uv generate-shell-completion zsh)"
+# fi
+
+# Claude Code API key (uncomment and set):
+# export ANTHROPIC_API_KEY="sk-ant-..."
+
+# Google Cloud SDK (uncomment and adjust paths):
+# if [ -f "$HOME/google-cloud-sdk/path.zsh.inc" ]; then
+#   . "$HOME/google-cloud-sdk/path.zsh.inc"
+# fi
+# if [ -f "$HOME/google-cloud-sdk/completion.zsh.inc" ]; then
+#   . "$HOME/google-cloud-sdk/completion.zsh.inc"
+# fi

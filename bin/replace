@@ -9,4 +9,11 @@ shift
 replace_with=$1
 shift
 
-ag -l --nocolor $find_this $* | xargs sed -i '' "s/$find_this/$replace_with/g"
+# Detect GNU vs BSD sed for in-place editing
+if sed --version >/dev/null 2>&1; then
+  sed_inplace="sed -i"
+else
+  sed_inplace="sed -i ''"
+fi
+
+ag -l --nocolor "$find_this" "$@" | xargs $sed_inplace "s/$find_this/$replace_with/g"

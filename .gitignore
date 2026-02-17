@@ -1,2 +1,12 @@
-!bin
+# Vim plugin bundles (installed at runtime)
 vim/bundle/
+
+# Machine-local overrides (never committed)
+*.local
+!*.local.example
+
+# Claude Code local state
+.claude/
+
+# OS junk
+.DS_Store

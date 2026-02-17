@@ -28,7 +28,7 @@
   autosquash = true
 [include]
   path = ~/.gitconfig.local
-[include]
-  path = ~/.gitconfig.local
 [diff]
   colorMoved = zebra
+[pull]
+  rebase = true

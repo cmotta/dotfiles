@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+# Launch Claude Code in a tmux session for headless/remote work.
+# Auto-checkpoints uncommitted changes, applies safety disallowed-tools.
+#
+# Usage:
+#   claude-headless "fix all lint errors in src/"
+#   claude-headless --session myproject "refactor auth middleware"
+#   claude-headless --attach
+
+set -euo pipefail
+
+SESSION_NAME="claude"
+TASK=""
+ATTACH_ONLY=false
+EXTRA_ARGS=()
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --session|-s)
+      SESSION_NAME="$2"
+      shift 2
+      ;;
+    --attach|-a)
+      ATTACH_ONLY=true
+      shift
+      ;;
+    --*)
+      EXTRA_ARGS+=("$1")
+      shift
+      ;;
+    *)
+      TASK="$1"
+      shift
+      ;;
+  esac
+done
+
+if $ATTACH_ONLY; then
+  exec tmux attach-session -t "$SESSION_NAME"
+fi
+
+if [[ -z "$TASK" ]]; then
+  echo "Usage: claude-headless [--session name] \"your task description\""
+  echo "       claude-headless --attach"
+  exit 1
+fi
+
+# --- Git checkpoint before autonomous run ---
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  if [[ -n $(git status --porcelain 2>/dev/null) ]]; then
+    echo "Creating git checkpoint..."
+    git add -A && git commit -m "checkpoint: pre-headless $(date +%Y%m%d-%H%M%S)" --no-verify || true
+  fi
+fi
+
+# --- Safety net: always block destructive commands ---
+DISALLOWED=(
+  "Bash(sudo:*)"
+  "Bash(rm -rf /:*)"
+  "Bash(rm -rf /*:*)"
+  "Bash(mkfs:*)"
+  "Bash(dd if=:*)"
+  "Bash(chmod 777:*)"
+  "Bash(chown root:*)"
+)
+
+DISALLOWED_ARGS=""
+for tool in "${DISALLOWED[@]}"; do
+  DISALLOWED_ARGS="$DISALLOWED_ARGS --disallowedTools \"$tool\""
+done
+
+export CLAUDE_TMUX_SESSION="$SESSION_NAME"
+
+echo "Starting Claude in tmux session: $SESSION_NAME"
+echo "Task: $TASK"
+echo "Attach with: tmux attach -t $SESSION_NAME"
+echo ""
+
+tmux new-session -d -s "$SESSION_NAME" \
+  "CLAUDE_TMUX_SESSION=$SESSION_NAME claude \
+    --dangerously-skip-permissions \
+    $DISALLOWED_ARGS \
+    ${EXTRA_ARGS[*]:-} \
+    -p \"$TASK\"; \
+  echo ''; \
+  echo 'Claude finished. Press any key to close.'; \
+  read -n 1"
+
+echo "Session started. Notifications via ${CLAUDE_NOTIFY_METHOD:-matrix} when detached."

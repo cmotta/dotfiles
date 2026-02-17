@@ -1,0 +1,6 @@
+" Machine-local vim plugin additions
+" Add extra Plug entries here. They are loaded by ~/.vimrc.bundles.
+"
+" Example:
+" Plug 'morhetz/gruvbox'
+" Plug 'vim-airline/vim-airline'

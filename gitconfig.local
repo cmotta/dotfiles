@@ -1,5 +1,0 @@
-[credential]
-	helper = osxkeychain
-[user]
-	name = cmls
-	email = motta.caio@gmail.com

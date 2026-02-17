@@ -25,3 +25,4 @@ MSG
 fi
 
 unset _old_path
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"

@@ -1,0 +1,10 @@
+# Git identity — install.sh will generate this file for you.
+# Uncomment and fill in to set manually:
+#
+# [user]
+#   name = Your Name
+#   email = you@example.com
+#
+# macOS credential helper (uncomment if using macOS):
+# [credential]
+#   helper = osxkeychain

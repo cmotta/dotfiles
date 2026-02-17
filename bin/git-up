@@ -3,4 +3,5 @@
 set -e
 
 git fetch origin
-git rebase origin/master "$@"
+default_branch=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's|refs/remotes/origin/||')
+git rebase "origin/$default_branch" "$@"

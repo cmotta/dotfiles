@@ -1,0 +1,8 @@
+# Machine-local tmux overrides
+# This file is sourced at the end of ~/.tmux.conf
+
+# Example: override status bar colors
+# set -g status-style "bg=#1e1e2e,fg=#cdd6f4"
+
+# Example: change status-right to show hostname
+# set -g status-right "#[fg=#666666]#h %H:%M "
