@@ -6,7 +6,7 @@ set -euo pipefail
 # Installs system packages, dev toolchains, Tailscale, dotfiles.
 # Idempotent — safe to re-run.
 
-DOTFILES_REPO="git@github.com:cmotta/dotfiles.git"
+DOTFILES_REPO="https://github.com/cmotta/dotfiles.git"
 DOTFILES_DIR="$HOME/Code/dotfiles"
 
 # ─── Helpers ──────────────────────────────────────────────────
@@ -103,27 +103,28 @@ else
   skip
 fi
 
-# ─── 6. SSH key + GitHub auth ────────────────────────────────
+# ─── 6. GitHub auth (fine-grained PAT) ───────────────────────
+# Uses a fine-grained personal access token for HTTPS cloning.
+# Create one at: github.com/settings/personal-access-tokens/new
+# Required permissions: Contents (read & write), Metadata (read)
 
-# Generate SSH key
-if [ ! -f "$HOME/.ssh/id_ed25519" ]; then
-  info "Generating SSH key..."
-  mkdir -p "$HOME/.ssh" && chmod 700 "$HOME/.ssh"
-  ssh-keygen -t ed25519 -C "$USER@$(hostname)" -f "$HOME/.ssh/id_ed25519" -N ""
-fi
-
-# Pre-populate GitHub host keys (prevents interactive prompt)
-if ! grep -q "github.com" "$HOME/.ssh/known_hosts" 2>/dev/null; then
-  info "Adding GitHub to known_hosts..."
-  mkdir -p "$HOME/.ssh" && chmod 700 "$HOME/.ssh"
-  ssh-keyscan -t ed25519 github.com >> "$HOME/.ssh/known_hosts" 2>/dev/null
-fi
-
-# Authenticate gh CLI + register SSH key
 if ! gh auth status &>/dev/null; then
-  info "Authenticating GitHub CLI..."
-  gh auth login
-  gh ssh-key add "$HOME/.ssh/id_ed25519.pub" --title "$USER@$(hostname)"
+  info "Authenticating GitHub..."
+  echo "  Enter a fine-grained PAT with Contents (read/write) access."
+  echo "  Create one at: https://github.com/settings/personal-access-tokens/new"
+  printf "  GitHub PAT: "
+  read -rs GITHUB_TOKEN
+  echo ""
+
+  # Store credential for git
+  git config --global credential.helper store
+  printf "https://x-access-token:%s@github.com\n" "$GITHUB_TOKEN" \
+    > "$HOME/.git-credentials"
+  chmod 600 "$HOME/.git-credentials"
+
+  # Authenticate gh CLI with the same token
+  echo "$GITHUB_TOKEN" | gh auth login --with-token
+  echo "  GitHub authenticated"
 fi
 
 # ─── 7. Clone dotfiles and run install.sh ─────────────────────
