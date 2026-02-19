@@ -40,7 +40,7 @@ link_file() {
 
   # Already correctly linked — skip (normalize double slashes from RCM)
   local current
-  current="$(readlink "$dest" 2>/dev/null | sed 's|//|/|g')"
+  current="$(readlink "$dest" 2>/dev/null | sed 's|//|/|g' || true)"
   if [ -L "$dest" ] && [ "$current" = "$src" ]; then
     skipped=$((skipped + 1))
     return

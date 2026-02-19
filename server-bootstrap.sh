@@ -89,7 +89,8 @@ fi
 
 if ! has tailscale; then
   info "Installing Tailscale..."
-  curl -fsSL https://tailscale.com/install.sh | sh
+  curl -fsSL https://tailscale.com/install.sh -o /tmp/tailscale-install.sh
+  sh /tmp/tailscale-install.sh
 else
   info "Tailscale"
   skip
@@ -145,7 +146,8 @@ cd "$DOTFILES_DIR" && ./install.sh
 
 if ! has uv; then
   info "Installing uv..."
-  curl -LsSf https://astral.sh/uv/install.sh | sh
+  curl -LsSf https://astral.sh/uv/install.sh -o /tmp/uv-install.sh
+  sh /tmp/uv-install.sh
   export PATH="$HOME/.local/bin:$PATH"
 else
   info "uv"
@@ -164,7 +166,8 @@ fi
 
 if ! has fnm; then
   info "Installing fnm..."
-  curl -fsSL https://fnm.vercel.app/install | bash
+  curl -fsSL https://fnm.vercel.app/install -o /tmp/fnm-install.sh
+  bash /tmp/fnm-install.sh
   export PATH="$HOME/.local/share/fnm:$PATH"
   eval "$(fnm env)"
 else
@@ -221,7 +224,8 @@ if [ -d "$HOME/.local/bin" ]; then
   eval "$(uv generate-shell-completion zsh)"
 fi
 
-# Claude Code
+# Claude Code — authenticate with: claude login
+# Or set an API key as fallback:
 # export ANTHROPIC_API_KEY="sk-ant-..."
 EOF
   echo "  wrote ~/.zshrc.local"
@@ -273,7 +277,7 @@ check "tailscale" tailscale
 echo ""
 echo "Next steps:"
 echo "  1. Log out and back in (or run: exec zsh)"
-echo "  2. Set ANTHROPIC_API_KEY in ~/.zshrc.local"
+echo "  2. Authenticate Claude: claude login"
 echo "  3. Configure notifications: ~/.claude/hooks/.env"
 echo "  4. Set up AWS credentials if using SNS/SES: aws configure"
 echo "  5. Test: claude-headless \"echo hello\""
