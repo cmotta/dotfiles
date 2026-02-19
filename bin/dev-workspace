@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# Create a tmux dev workspace with Claude Code + 3 terminal panes.
+#
+# Layout:
+#   ┌──────────────┬──────────┐
+#   │              │          │
+#   │   Main       │  Claude  │
+#   │  Terminal    │  (full   │
+#   │   (large)   │  height) │
+#   │              │          │
+#   ├──────┬───────┤          │
+#   │ dev  │ logs  │          │
+#   │server│ tail  │          │
+#   └──────┴───────┴──────────┘
+#
+# Usage:
+#   dev-workspace           # session named "dev"
+#   dev-workspace myproject # session named "myproject"
+
+set -euo pipefail
+
+SESSION="${1:-dev}"
+
+# Attach if session already exists
+if tmux has-session -t "$SESSION" 2>/dev/null; then
+  exec tmux attach-session -t "$SESSION"
+fi
+
+export CLAUDE_TMUX_SESSION="$SESSION"
+
+# Create session with the main terminal pane
+tmux new-session -d -s "$SESSION" -x "$(tput cols)" -y "$(tput lines)"
+
+# Split right 40% for Claude (full height)
+tmux split-window -h -t "$SESSION" -p 40 \
+  "CLAUDE_TMUX_SESSION=$SESSION claude; exec $SHELL"
+
+# Select the left pane and split bottom 30%
+tmux select-pane -t "$SESSION:.0"
+tmux split-window -v -t "$SESSION" -p 30
+
+# Split the bottom-left pane in half for dev server / logs
+tmux split-window -h -t "$SESSION"
+
+# Focus on main terminal (top-left)
+tmux select-pane -t "$SESSION:.0"
+
+# Attach
+exec tmux attach-session -t "$SESSION"

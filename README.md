@@ -71,7 +71,7 @@ sudo apt install zsh git curl neovim tmux ripgrep fd-find
 | tmux | `tmux.conf` | TPM plugins, vi copy mode |
 | git | `gitconfig`, `gitignore`, `gitmessage`, `git_template` | Aliases, hooks, ctags |
 | shell | `aliases`, `bin/` | Utility scripts on `$PATH` |
-| Claude Code | `claude/`, `bin/claude-headless` | Global instructions, slash commands, hooks |
+| Claude Code | `claude/`, `bin/dev-workspace` | Global instructions, slash commands, hooks |
 | other | `psqlrc`, `gemrc`, `agignore`, `ctags.d`, `hushlogin` | Tool configs |
 
 ## Customization with `.local` Files
@@ -121,7 +121,7 @@ See the `*.local.example` files in this repo for commented templates. `ssh_confi
 | `path` | Pretty-print `$PATH` |
 | `git-churn` | Show file churn on current branch |
 | `replace foo bar **/*.rb` | Find and replace across files |
-| `claude-headless "task"` | Run Claude Code in a tmux session for headless/remote work |
+| `dev-workspace [name]` | Start tmux dev workspace (Claude + 3 terminal panes) |
 | `tat` | Attach to tmux session named after current directory |
 
 ## License
