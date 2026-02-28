@@ -29,7 +29,7 @@ fi
 export CLAUDE_TMUX_SESSION="$SESSION"
 
 # Create session with the main terminal pane
-tmux new-session -d -s "$SESSION" -x "$(tput cols)" -y "$(tput lines)"
+tmux new-session -d -s "$SESSION"
 
 # Split right 40% for Claude (full height)
 tmux split-window -h -t "$SESSION" -p 40 \

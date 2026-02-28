@@ -179,6 +179,10 @@ if command -v claude &>/dev/null || [ -d "$HOME/.claude" ]; then
     link_file "$f" "$HOME/.claude/commands/$(basename "$f")"
   done
 
+  # Status line script
+  link_file "$DOTFILES_DIR/claude/statusline-command.sh" \
+    "$HOME/.claude/statusline-command.sh"
+
   # Notification hook
   link_file "$DOTFILES_DIR/claude/hooks/notify-if-detached.sh" \
     "$HOME/.claude/hooks/notify-if-detached.sh"
