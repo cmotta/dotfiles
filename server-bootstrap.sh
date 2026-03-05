@@ -185,10 +185,10 @@ else
 fi
 
 if ! has pnpm; then
-  info "Enabling pnpm via corepack..."
-  eval "$(fnm env)"
-  corepack enable
-  corepack prepare pnpm@latest --activate
+  info "Installing pnpm..."
+  curl -fsSL https://get.pnpm.io/install.sh | sh -
+  export PNPM_HOME="$HOME/.local/share/pnpm"
+  export PATH="$PNPM_HOME:$PATH"
 else
   info "pnpm"
   skip
@@ -222,6 +222,12 @@ fi
 if [ -d "$HOME/.local/bin" ]; then
   export PATH="$HOME/.local/bin:$PATH"
   eval "$(uv generate-shell-completion zsh)"
+fi
+
+# pnpm
+if [ -d "$HOME/.local/share/pnpm" ]; then
+  export PNPM_HOME="$HOME/.local/share/pnpm"
+  export PATH="$PNPM_HOME:$PATH"
 fi
 
 # Claude Code — authenticate with: claude login
