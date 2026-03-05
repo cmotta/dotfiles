@@ -202,7 +202,7 @@ fi
 
 if ! has claude; then
   info "Installing Claude Code CLI..."
-  npm install -g @anthropic-ai/claude-code
+  pnpm add -g @anthropic-ai/claude-code
 else
   info "Claude Code CLI"
   skip
