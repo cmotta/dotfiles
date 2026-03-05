@@ -28,24 +28,24 @@ fi
 
 export CLAUDE_TMUX_SESSION="$SESSION"
 
-# Create session (loads tmux.conf, which may set pane-base-index)
+# Create session — first pane is main terminal
 tmux new-session -d -s "$SESSION"
 
-# Query base index now that the server is running
-B=$(tmux show-option -gv pane-base-index 2>/dev/null || echo 0)
-
 # Split right 40% for Claude Code (full height)
-tmux split-window -h -t "$SESSION:.$B" -p 40 \
+tmux split-window -h -t "$SESSION" -p 40 \
   "CLAUDE_TMUX_SESSION=$SESSION claude; exec $SHELL"
 
-# Split main terminal bottom 30% for dev server
-tmux split-window -v -t "$SESSION:.$B" -p 30
+# Go back to the left pane (main terminal)
+tmux select-pane -t "$SESSION" -L
 
-# Split dev server pane in half for logs tail
-tmux split-window -h -t "$SESSION:.$((B+2))"
+# Split bottom 30% for dev server
+tmux split-window -v -t "$SESSION" -p 30
+
+# Split the dev server pane (currently active) in half for logs
+tmux split-window -h -t "$SESSION" -p 50
 
 # Focus on main terminal (top-left)
-tmux select-pane -t "$SESSION:.$B"
+tmux select-pane -t "$SESSION" -U
 
 # Attach
 exec tmux attach-session -t "$SESSION"
