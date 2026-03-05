@@ -30,22 +30,24 @@ export CLAUDE_TMUX_SESSION="$SESSION"
 
 # Create session — first pane is main terminal
 tmux new-session -d -s "$SESSION"
+MAIN=$(tmux list-panes -t "$SESSION" -F '#{pane_id}')
 
 # Split right 40% for Claude Code (full height)
-tmux split-window -h -t "$SESSION" -p 40 \
+tmux split-window -h -t "$MAIN" -p 40 \
   "CLAUDE_TMUX_SESSION=$SESSION claude; exec $SHELL"
 
-# Go back to the left pane (main terminal)
-tmux select-pane -t "$SESSION" -L
+# Split main terminal bottom 30% for dev server
+tmux split-window -v -t "$MAIN" -p 30
 
-# Split bottom 30% for dev server
-tmux split-window -v -t "$SESSION" -p 30
+# DEV is now the active (bottom-left) pane
+DEV=$(tmux list-panes -t "$SESSION" -F '#{pane_id} #{pane_top}' \
+  | sort -k2 -rn | head -1 | awk '{print $1}')
 
-# Split the dev server pane (currently active) in half for logs
-tmux split-window -h -t "$SESSION" -p 50
+# Split dev server pane in half for logs
+tmux split-window -h -t "$DEV" -p 50
 
 # Focus on main terminal (top-left)
-tmux select-pane -t "$SESSION" -U
+tmux select-pane -t "$MAIN"
 
 # Attach
 exec tmux attach-session -t "$SESSION"
