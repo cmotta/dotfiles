@@ -36,14 +36,14 @@ tmux split-window -h -t "$SESSION" -p 40 \
   "CLAUDE_TMUX_SESSION=$SESSION claude; exec $SHELL"
 
 # Select the left pane and split bottom 30%
-tmux select-pane -t "$SESSION:.0"
+tmux select-pane -t "$SESSION:.1"
 tmux split-window -v -t "$SESSION" -p 30
 
 # Split the bottom-left pane in half for dev server / logs
 tmux split-window -h -t "$SESSION"
 
 # Focus on main terminal (top-left)
-tmux select-pane -t "$SESSION:.0"
+tmux select-pane -t "$SESSION:.1"
 
 # Attach
 exec tmux attach-session -t "$SESSION"
