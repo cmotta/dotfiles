@@ -185,6 +185,7 @@ else
 fi
 
 # Ensure fnm shims (node, npm, etc.) are on PATH for the rest of the script
+export PATH="$HOME/.local/share/fnm:$PATH"
 has fnm && eval "$(fnm env)"
 
 if ! has pnpm; then
