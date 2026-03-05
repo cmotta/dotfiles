@@ -198,7 +198,7 @@ fi
 
 if ! has claude; then
   info "Installing Claude Code CLI..."
-  eval "$(fnm env)"
+  has fnm && eval "$(fnm env)"
   npm install -g @anthropic-ai/claude-code
 else
   info "Claude Code CLI"
