@@ -28,20 +28,15 @@ fi
 
 export CLAUDE_TMUX_SESSION="$SESSION"
 
-# Create session — first pane is main terminal
-tmux new-session -d -s "$SESSION"
-MAIN=$(tmux list-panes -t "$SESSION" -F '#{pane_id}')
+# Create session — capture each pane ID as we go
+MAIN=$(tmux new-session -d -s "$SESSION" -P -F '#{pane_id}')
 
 # Split right 40% for Claude Code (full height)
-tmux split-window -h -t "$MAIN" -p 40 \
+tmux split-window -h -t "$MAIN" -p 40 -P -F '#{pane_id}' \
   "CLAUDE_TMUX_SESSION=$SESSION claude; exec $SHELL"
 
 # Split main terminal bottom 30% for dev server
-tmux split-window -v -t "$MAIN" -p 30
-
-# DEV is now the active (bottom-left) pane
-DEV=$(tmux list-panes -t "$SESSION" -F '#{pane_id} #{pane_top}' \
-  | sort -k2 -rn | head -1 | awk '{print $1}')
+DEV=$(tmux split-window -v -t "$MAIN" -p 30 -P -F '#{pane_id}')
 
 # Split dev server pane in half for logs
 tmux split-window -h -t "$DEV" -p 50
