@@ -17,7 +17,7 @@
 #   dev-workspace           # session named "dev"
 #   dev-workspace myproject # session named "myproject"
 
-set -euo pipefail
+set -xeuo pipefail
 
 SESSION="${1:-dev}"
 
