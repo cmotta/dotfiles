@@ -184,6 +184,9 @@ else
   skip
 fi
 
+# Ensure fnm shims (node, npm, etc.) are on PATH for the rest of the script
+has fnm && eval "$(fnm env)"
+
 if ! has pnpm; then
   info "Installing pnpm..."
   curl -fsSL https://get.pnpm.io/install.sh | sh -
@@ -198,7 +201,6 @@ fi
 
 if ! has claude; then
   info "Installing Claude Code CLI..."
-  has fnm && eval "$(fnm env)"
   npm install -g @anthropic-ai/claude-code
 else
   info "Claude Code CLI"
