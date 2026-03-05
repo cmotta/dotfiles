@@ -20,7 +20,6 @@
 set -euo pipefail
 
 SESSION="${1:-dev}"
-BASE_INDEX=$(tmux show-option -gv pane-base-index 2>/dev/null || echo 0)
 
 # Attach if session already exists
 if tmux has-session -t "$SESSION" 2>/dev/null; then
@@ -29,23 +28,24 @@ fi
 
 export CLAUDE_TMUX_SESSION="$SESSION"
 
-# Pane $BASE_INDEX: main terminal (top-left)
+# Create session (loads tmux.conf, which may set pane-base-index)
 tmux new-session -d -s "$SESSION"
 
-# Pane $((BASE_INDEX+1)): Claude Code (full-height right, 40%)
-tmux split-window -h -t "$SESSION:.$BASE_INDEX" -p 40 \
+# Query base index now that the server is running
+B=$(tmux show-option -gv pane-base-index 2>/dev/null || echo 0)
+
+# Split right 40% for Claude Code (full height)
+tmux split-window -h -t "$SESSION:.$B" -p 40 \
   "CLAUDE_TMUX_SESSION=$SESSION claude; exec $SHELL"
 
-# Select main terminal and split bottom 30% for dev server
-# Pane $((BASE_INDEX+2)): dev server (bottom-left)
-tmux split-window -v -t "$SESSION:.$BASE_INDEX" -p 30
+# Split main terminal bottom 30% for dev server
+tmux split-window -v -t "$SESSION:.$B" -p 30
 
-# Split dev server pane in half for logs
-# Pane $((BASE_INDEX+3)): logs tail (bottom-right of left side)
-tmux split-window -h -t "$SESSION:.$((BASE_INDEX+2))"
+# Split dev server pane in half for logs tail
+tmux split-window -h -t "$SESSION:.$((B+2))"
 
 # Focus on main terminal (top-left)
-tmux select-pane -t "$SESSION:.$BASE_INDEX"
+tmux select-pane -t "$SESSION:.$B"
 
 # Attach
 exec tmux attach-session -t "$SESSION"
