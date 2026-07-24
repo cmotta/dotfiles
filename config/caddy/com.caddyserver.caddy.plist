@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  macOS LaunchAgent for the Caddy local dev proxy.
+
+  Runs as YOUR user (installed to ~/Library/LaunchAgents), never root. Sites
+  listen on the unprivileged port :8443, so no elevated binding is needed — this
+  is the deliberate tradeoff that keeps a compromised proxy from being a root
+  process. The internal CA lives under ~/Library/Application Support/Caddy.
+
+  The __CADDY_*__ placeholders are resolved to absolute paths by install.sh at
+  copy time (launchd plists cannot expand ~ or $PATH).
+-->
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.caddyserver.caddy</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>__CADDY_BIN__</string>
+		<string>run</string>
+		<string>--config</string>
+		<string>__CADDY_CONFIG__</string>
+		<string>--adapter</string>
+		<string>caddyfile</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>KeepAlive</key>
+	<true/>
+	<key>StandardOutPath</key>
+	<string>__CADDY_LOG_OUT__</string>
+	<key>StandardErrorPath</key>
+	<string>__CADDY_LOG_ERR__</string>
+</dict>
+</plist>

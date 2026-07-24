@@ -1,0 +1,26 @@
+{
+	local_certs
+	admin localhost:2019
+
+	# Without this, Caddy opens an HTTP->HTTPS redirect listener on privileged
+	# port 80 — which the user-level proxy can't bind, so the whole config fails
+	# to load. We serve HTTPS on :8443 directly and never need the redirect.
+	auto_https disable_redirects
+}
+
+# Every site must import this. Non-negotiable — binds to loopback only so the
+# dev stack is never published to whatever network the laptop is on.
+#
+# Sites listen on :8443 (see each site's address), which is unprivileged: the
+# proxy runs as your user via a LaunchAgent, never as root. That is the whole
+# reason URLs carry :8443 — the tradeoff we took to avoid a root daemon.
+(dev) {
+	bind 127.0.0.1
+}
+
+# Long-lived streaming (SSE from agent endpoints, Langfuse traces).
+(stream) {
+	import dev
+}
+
+import sites.d/*.caddy

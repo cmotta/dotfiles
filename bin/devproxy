@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+# devproxy — manage local HTTPS dev-proxy site blocks.
+#   devproxy add studio 3000   # route https://studio.localhost:8443 -> 127.0.0.1:3000
+#   devproxy rm  studio        # remove the site block
+#   devproxy ls                # list configured sites
+#
+# Generated site files land in ~/.config/caddy/sites.d (a symlink into the
+# dotfiles repo). They are gitignored per-machine; commit a site only by
+# hand-adding it and negating it in .gitignore, as duckdb.caddy is.
+set -euo pipefail
+
+CADDY_DIR="${CADDY_DIR:-$HOME/.config/caddy}"
+SITES="$CADDY_DIR/sites.d"
+CONFIG="$CADDY_DIR/Caddyfile"
+TLD="${DEVPROXY_TLD:-localhost}"
+PROXY_PORT="${DEVPROXY_PORT:-8443}"   # unprivileged HTTPS port the proxy serves
+
+die() { echo "devproxy: $*" >&2; exit 1; }
+
+# Names become hostnames and are written into /etc/hosts and a Caddyfile via
+# sudo — validate strictly so a stray space/newline can't inject a second line.
+validate_name() {
+  [[ "$1" =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?$ ]] \
+    || die "invalid name '$1' (use lowercase letters, digits, hyphens)"
+}
+validate_port() {
+  [[ "$1" =~ ^[0-9]+$ ]] && (( $1 >= 1 && $1 <= 65535 )) \
+    || die "invalid port '$1' (want 1-65535)"
+}
+
+reload() { caddy reload --config "$CONFIG" >/dev/null && echo "reloaded"; }
+
+case "${1:-}" in
+  add)
+    name="${2:-}"; port="${3:-}"
+    [ -n "$name" ] && [ -n "$port" ] || die "usage: devproxy add NAME PORT"
+    validate_name "$name"
+    validate_port "$port"
+    mkdir -p "$SITES"
+    # Upstream is 'localhost', not 127.0.0.1: dev servers bind IPv4 or IPv6
+    # loopback inconsistently, and 'localhost' resolves to both (Happy Eyeballs),
+    # so the proxy connects whichever the upstream chose. (The listener still
+    # binds 127.0.0.1 via 'import dev' — that's the security invariant.)
+    cat > "$SITES/$name.caddy" <<EOF
+$name.$TLD:$PROXY_PORT {
+	import dev
+	reverse_proxy localhost:$port
+}
+EOF
+    # curl/Node/containers use the system resolver, which does not wildcard
+    # *.localhost — Chromium does. Write an explicit hosts entry for them.
+    if ! grep -q "[[:space:]]$name\.$TLD\$" /etc/hosts; then
+      echo "127.0.0.1 $name.$TLD" | sudo tee -a /etc/hosts >/dev/null
+    fi
+    # validate before reload: a syntax error otherwise takes down every local
+    # service at once instead of failing loudly on the one just edited.
+    caddy validate --config "$CONFIG" >/dev/null
+    reload
+    echo "https://$name.$TLD:$PROXY_PORT -> 127.0.0.1:$port"
+    ;;
+  rm)
+    name="${2:-}"
+    [ -n "$name" ] || die "usage: devproxy rm NAME"
+    validate_name "$name"
+    rm -f "$SITES/$name.caddy"
+    caddy validate --config "$CONFIG" >/dev/null
+    reload
+    echo "removed $name (hosts entry left in place)"
+    ;;
+  ls)
+    grep -h -E '^\S+ \{' "$SITES"/*.caddy 2>/dev/null | tr -d ' {' || echo "(no sites)"
+    ;;
+  *)
+    echo "usage: devproxy {add NAME PORT|rm NAME|ls}" >&2
+    exit 1
+    ;;
+esac

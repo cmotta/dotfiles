@@ -90,6 +90,9 @@ done
 # config/nvim → ~/.config/nvim
 link_file "$DOTFILES_DIR/config/nvim" "$HOME/.config/nvim"
 
+# config/caddy → ~/.config/caddy (local HTTPS dev proxy)
+link_file "$DOTFILES_DIR/config/caddy" "$HOME/.config/caddy"
+
 # ─── Git identity ──────────────────────────────────────────────
 if [ ! -f "$HOME/.gitconfig.local" ]; then
   echo ""
@@ -225,6 +228,41 @@ if changed:
 else:
     print('  ~/.claude/settings.json already configured — skipped')
 PYEOF
+  fi
+fi
+
+# ─── Caddy dev proxy (macOS) ──────────────────────────────────
+# Config is already symlinked above (config/caddy → ~/.config/caddy). This
+# section only resolves the LaunchAgent plist — launchd plists can't expand ~
+# or $PATH, so the __CADDY_*__ placeholders are baked to absolute paths here.
+# The proxy runs as YOUR user on :8443 (no root), so nothing here needs sudo.
+if [ "$OS" = "macos" ]; then
+  echo ""
+  echo "Setting up Caddy dev proxy..."
+  if ! command -v caddy &>/dev/null; then
+    echo "  caddy not installed — run: brew install caddy"
+  else
+    caddy_bin="$(command -v caddy)"
+    caddy_cfg="$HOME/.config/caddy/Caddyfile"
+    resolved="$DOTFILES_DIR/config/caddy/com.caddyserver.caddy.resolved.plist"
+    agent="$HOME/Library/LaunchAgents/com.caddyserver.caddy.plist"
+    mkdir -p "$HOME/Library/Logs"
+    sed -e "s#__CADDY_BIN__#$caddy_bin#" \
+        -e "s#__CADDY_CONFIG__#$caddy_cfg#" \
+        -e "s#__CADDY_LOG_OUT__#$HOME/Library/Logs/caddy.out.log#" \
+        -e "s#__CADDY_LOG_ERR__#$HOME/Library/Logs/caddy.err.log#" \
+        "$DOTFILES_DIR/config/caddy/com.caddyserver.caddy.plist" > "$resolved"
+    echo "  wrote  $resolved"
+    if launchctl print "gui/$(id -u)/com.caddyserver.caddy" &>/dev/null; then
+      echo "  LaunchAgent already loaded — apply config changes with:"
+      echo "    launchctl kickstart -k gui/$(id -u)/com.caddyserver.caddy"
+    else
+      echo "  To start the proxy on :8443 and trust its CA, run IN THIS ORDER:"
+      echo "    cp \"$resolved\" \"$agent\""
+      echo "    launchctl bootstrap gui/$(id -u) \"$agent\"   # richer errors than 'load'"
+      echo "    caddy trust   # queries the now-running proxy on :2019 (may prompt for keychain)"
+      echo "  then restart your browser (Brave caches cert verification)."
+    fi
   fi
 fi
 

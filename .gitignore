@@ -8,5 +8,12 @@ vim/bundle/
 # Claude Code local state
 .claude/
 
+# Caddy dev proxy: CA/runtime state and all per-machine generated site files.
+# Sites are never committed (public repo) — regenerate per host with devproxy.
+config/caddy/pki/
+config/caddy/data/
+config/caddy/*.resolved.plist
+config/caddy/sites.d/*.caddy
+
 # OS junk
 .DS_Store
