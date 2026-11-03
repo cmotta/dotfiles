@@ -93,6 +93,9 @@ link_file "$DOTFILES_DIR/config/nvim" "$HOME/.config/nvim"
 # config/caddy → ~/.config/caddy (local HTTPS dev proxy)
 link_file "$DOTFILES_DIR/config/caddy" "$HOME/.config/caddy"
 
+# config/rex → ~/.config/rex (Rex terminal multiplexer: init.lua, actions, keys)
+link_file "$DOTFILES_DIR/config/rex" "$HOME/.config/rex"
+
 # ─── Git identity ──────────────────────────────────────────────
 if [ ! -f "$HOME/.gitconfig.local" ]; then
   echo ""

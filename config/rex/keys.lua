@@ -1,0 +1,2 @@
+-- Key bindings and modes. Empty on purpose: the app ships its own defaults
+-- for splits, tabs, focus, move, float, zoom and balance.
