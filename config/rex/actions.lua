@@ -104,7 +104,7 @@ local function status_of(session_id, block_id)
   for _, r in ipairs(st and st.records or {}) do
     local rank = WAITING[r.state]
     if rank and (not best or rank < best.rank) then
-      best = { rank = rank, state = r.state, kind = r.kind,
+      best = { rank = rank, state = r.state, kind = r.kind, at = r.updated_at or "",
                app = r.effective_app or r.app, msg = r.msg or r.title }
     end
   end
@@ -132,11 +132,11 @@ rex.action{
       end
     end
 
-    -- Stable sort by urgency; list order (session, then block) breaks ties.
-    for i = 1, #found do found[i].n = i end
+    -- Most urgent state first; within a state, the most recent change first,
+    -- so the pane that just asked for you comes before one done an hour ago.
     table.sort(found, function(a, b)
       if a.rank ~= b.rank then return a.rank < b.rank end
-      return a.n < b.n
+      return a.at > b.at
     end)
 
     -- Continue after the current pane when it is one of them, else start at the top.
@@ -154,6 +154,6 @@ rex.action{
 
     if not target then return { found = 0 } end
     return { found = #found, session = target.session, state = target.state, kind = target.kind,
-             app = target.app, msg = target.msg, block_id = target.block_id }
+             app = target.app, msg = target.msg, block_id = target.block_id, updated_at = target.at }
   end,
 }
