@@ -24,3 +24,6 @@ rex.bind("resize/enter",  "client.mode.exit")
 for key, direction in pairs{ h = "left", l = "right", k = "up", j = "down" } do
   rex.bind("cmd+shift+" .. key, "pane.focus", { direction = direction })
 end
+
+-- Jump to the next pane waiting on you (see next_blocked in actions.lua).
+rex.bind("ctrl+cmd+n", "next_blocked")
