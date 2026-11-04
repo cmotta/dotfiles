@@ -1,0 +1,43 @@
+#compdef rx
+
+_rx() {
+  local -a verbs
+  verbs=(
+    'tab:new tab here or in another session'
+    'ws:new tab with a named layout'
+    'run:run a command and report its state to Rex'
+    'next:jump to the next pane waiting on you'
+    'layouts:list layouts'
+  )
+  if (( CURRENT == 2 )); then
+    _describe 'rx verb' verbs
+    return
+  fi
+  case "${words[2]}" in
+    tab) case $CURRENT in
+           3) _rx_sessions ;;
+           4) _files -/ ;;
+           5) _rx_layouts ;;
+         esac ;;
+    ws)  case $CURRENT in
+           3) _rx_layouts ;;
+           4) _rx_sessions ;;
+           5) _files -/ ;;
+         esac ;;
+    run) shift 2 words; (( CURRENT -= 2 )); _normal ;;
+  esac
+}
+
+_rx_sessions() {
+  local -a sessions
+  sessions=(. ${(f)"$(rex ls 2>/dev/null | awk 'NR>1 {print $1}')"})
+  _describe 'session' sessions
+}
+
+_rx_layouts() {
+  local -a layouts
+  layouts=(${(f)"$(sed -n 's/^  \([a-z_]*\) = function.*/\1/p' ~/.config/rex/layouts.lua)"})
+  _describe 'layout' layouts
+}
+
+_rx "$@"

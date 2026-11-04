@@ -31,8 +31,8 @@ end
 
 -- Open a tab in a session, from wherever you are. The session is a topic
 -- (ed, twk, dotfiles), the tab is a task, the path is where its shells start.
--- Creates the session when the label is new. From a shell: `rt`, see
--- zsh/functions/rt. Layouts are named in layouts.lua.
+-- Creates the session when the label is new. From a shell: `rx tab` and
+-- `rx ws`, see zsh/functions/rx. Layouts are named in layouts.lua.
 local layouts = require("layouts")
 
 rex.action{
@@ -45,7 +45,7 @@ rex.action{
     local path = args.path
     -- Relative paths would resolve against the server, not the caller's shell.
     if path:sub(1, 1) ~= "/" then
-      error("path must be absolute (use $PWD or the rt shell function): " .. path)
+      error("path must be absolute (use $PWD or the rx shell function): " .. path)
     end
     local probe = rex.exec({ "test", "-d", path })
     if not (probe and probe.ok) then error("not a directory: " .. path) end

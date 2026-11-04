@@ -1,0 +1,51 @@
+# rx: shell-side helpers for Rex. The Lua actions live in config/rex; this
+# layer adds what Lua cannot see, the current directory and a wrapped command.
+#
+#   rx tab [session|.] [dir] [layout]   new tab, here or in another session
+#   rx ws  LAYOUT [session|.] [dir]     new tab with a named layout (layouts.lua)
+#   rx run CMD...                       run CMD, report working then done/error
+#   rx next                             jump to the next pane waiting on you
+#   rx layouts                          list the layouts
+
+function rx() {
+  local verb="${1:-help}"; shift 2>/dev/null
+  case "$verb" in
+    tab)     _rx_tab "${1:-.}" "${2:-.}" "${3:-shell}" ;;
+    ws)      [[ -n "$1" ]] || { echo "rx ws: layout name required" >&2; return 2; }
+             _rx_tab "${2:-.}" "${3:-.}" "$1" ;;
+    run)     _rx_run "$@" ;;
+    next)    rex do next_blocked ;;
+    layouts) sed -n 's/^  \([a-z_]*\) = function.*/\1/p' ~/.config/rex/layouts.lua ;;
+    help|*)  sed -n '4,9p' "${(%):-%x}" ;;
+  esac
+}
+
+function _rx_tab() {
+  local session="$1" dir layout="$3"
+  dir="$(cd "$2" 2>/dev/null && pwd -P)" || { echo "rx: no such directory: $2" >&2; return 1; }
+  if [[ "$session" == "." ]]; then
+    rex do open path="$dir" layout="$layout"
+  else
+    rex do open session="$session" path="$dir" layout="$layout"
+  fi
+}
+
+# Program Status Protocol (OSC 7501). Rex shows the state on the pane and
+# next_blocked picks it up. Only start and exit are visible; a prompt inside
+# the command still shows as working.
+function _rx_status() {
+  local state="$1" app="$2" msg="$3"
+  printf '\e]7501;state=%s:app=%s:msg=%s\e\\' "$state" "$app" "$(printf '%s' "$msg" | base64)"
+}
+
+function _rx_run() {
+  [[ $# -gt 0 ]] || { echo "rx run: command required" >&2; return 2; }
+  [[ "$TERM_PROGRAM" == "rex" ]] || { "$@"; return $?; }
+  local app="${1:t}"
+  _rx_status working "$app" "$*"
+  "$@"
+  local rc=$?
+  if (( rc == 0 )); then _rx_status done "$app" "$* finished"
+  else _rx_status error "$app" "$* exited $rc"; fi
+  return $rc
+}
