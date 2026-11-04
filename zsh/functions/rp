@@ -1,0 +1,12 @@
+# Open or jump to the Rex session for a repo (one session per repo).
+#
+#   rp              # this directory
+#   rp ../other     # any directory, resolved from this shell
+#
+# Delegates to the `repo` action in config/rex/actions.lua.
+
+function rp() {
+  local dir
+  dir="$(cd "${1:-.}" 2>/dev/null && pwd -P)" || { echo "rp: no such directory: ${1:-.}" >&2; return 1; }
+  rex do repo path="$dir"
+}

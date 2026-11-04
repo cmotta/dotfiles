@@ -19,7 +19,7 @@ rex.action{
 
 -- One session per repo, labeled after the folder. Jumps to the session if it
 -- exists, otherwise creates it with one shell in the repo. From a shell:
---   rex do repo path=$PWD
+--   rex do repo path=$PWD        (or `rp [dir]`, see zsh/functions/rp)
 local function basename(path)
   return (path:gsub("/+$", "")):match("([^/]+)$")
 end
@@ -31,9 +31,15 @@ rex.action{
   keywords = "repo session project workspace open",
   args = { path = "string" },
   run = function(ctx, args)
-    local path  = args.path
+    local path = args.path
+    -- Relative paths would resolve against the server, not the caller's shell.
+    if path:sub(1, 1) ~= "/" then
+      error("path must be absolute (use $PWD or the rp shell function): " .. path)
+    end
+    local probe = rex.exec({ "test", "-d", path })
+    if not (probe and probe.ok) then error("not a directory: " .. path) end
     local label = basename(path)
-    if not label then error("path must name a folder: " .. tostring(path)) end
+    if not label then error("path must name a folder: " .. path) end
 
     local list = assert(rex.call("session.list", {}))
     local session_id
