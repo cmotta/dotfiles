@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# clone-repos: clone the repos listed in ~/.repos.local into ~/Code, one
+# per line as "<dir relative to ~/Code> <clone url>". Lines starting with
+# # are comments. Existing directories are left alone, so it is safe to
+# re-run after editing the list. See repos.local.example in dotfiles.
+
+LIST="${REPOS_LIST:-$HOME/.repos.local}"
+ROOT="${CODE_DIR:-$HOME/Code}"
+
+[ -f "$LIST" ] || { echo "clone-repos: no list at $LIST" >&2; exit 1; }
+
+cloned=0 skipped=0 failed=0
+while read -r dir url _; do
+  case "$dir" in ''|'#'*) continue ;; esac
+  [ -n "$url" ] || { echo "  bad line: $dir" >&2; failed=$((failed + 1)); continue; }
+  dest="$ROOT/$dir"
+  if [ -e "$dest" ]; then
+    skipped=$((skipped + 1))
+    continue
+  fi
+  mkdir -p "$(dirname "$dest")"
+  if git clone -q "$url" "$dest"; then
+    echo "  cloned   $dir"
+    cloned=$((cloned + 1))
+  else
+    echo "  failed   $dir ($url)" >&2
+    failed=$((failed + 1))
+  fi
+done < "$LIST"
+
+echo "clone-repos: $cloned cloned, $skipped already present, $failed failed"
+[ "$failed" -eq 0 ]

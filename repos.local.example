@@ -1,0 +1,13 @@
+# Repos to clone into ~/Code, one per line: <dir> <url>. Copy to ~/.repos.local
+# and run clone-repos. Dirs are topics (one Rex session each); use HTTPS URLs so
+# gh auth setup-git and glab auth login provide the credentials.
+
+# work
+#acme/api               https://github.com/acme/api.git
+#acme/infra             https://gitlab.com/acme/infra/infra-code.git
+
+# personal, more than one level
+#me/configs/dotfiles    https://github.com/you/dotfiles.git
+#me/homelab/compose     https://github.com/you/homelab-compose.git
+#me/iot/sensors         https://github.com/you/sensors.git
+#me/ee/kicad-libs       https://github.com/you/kicad-libs.git

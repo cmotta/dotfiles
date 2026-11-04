@@ -164,6 +164,12 @@ if [ ! -f "$HOME/.ssh/config" ]; then
   fi
 fi
 
+# ─── Repo list ────────────────────────────────────────────────
+if [ ! -f "$HOME/.repos.local" ]; then
+  cp "$DOTFILES_DIR/repos.local.example" "$HOME/.repos.local"
+  echo "  copied repos.local.example → ~/.repos.local (edit, then run clone-repos)"
+fi
+
 # ─── Legacy cleanup ───────────────────────────────────────────
 if [ -f "$HOME/.git_template/HEAD" ] && \
    [ "$(cat "$HOME/.git_template/HEAD")" = "ref: refs/heads/main" ]; then

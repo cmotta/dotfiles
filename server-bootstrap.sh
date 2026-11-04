@@ -60,6 +60,24 @@ else
   skip
 fi
 
+# ─── 2b. Install GitLab CLI (official .deb from the release) ─
+
+if ! has glab; then
+  info "Installing GitLab CLI..."
+  glab_tag=$(curl -fsSL "https://gitlab.com/api/v4/projects/gitlab-org%2Fcli/releases?per_page=1" \
+    | python3 -c 'import json,sys; print(json.load(sys.stdin)[0]["tag_name"])')
+  glab_ver="${glab_tag#v}"
+  glab_deb="glab_${glab_ver}_linux_$(dpkg --print-architecture).deb"
+  tmpdir=$(mktemp -d)
+  curl -fsSL -o "$tmpdir/$glab_deb" \
+    "https://gitlab.com/gitlab-org/cli/-/releases/${glab_tag}/downloads/${glab_deb}"
+  sudo apt install -y "$tmpdir/$glab_deb"
+  rm -rf "$tmpdir"
+else
+  info "GitLab CLI"
+  skip
+fi
+
 # ─── 3. Install AWS CLI v2 ───────────────────────────────────
 
 if ! has aws; then
@@ -104,28 +122,19 @@ else
   skip
 fi
 
-# ─── 6. GitHub auth (fine-grained PAT) ───────────────────────
-# Uses a fine-grained personal access token for HTTPS cloning.
-# Create one at: github.com/settings/personal-access-tokens/new
-# Required permissions: Contents (read & write), Metadata (read)
+# ─── 6. Forge logins (done by you, once) ─────────────────────
+# gh and glab store the token and act as git's credential helper for HTTPS
+# clones, so no PAT is pasted here. Run the logins after the bootstrap.
 
-if ! gh auth status &>/dev/null; then
-  info "Authenticating GitHub..."
-  echo "  Enter a fine-grained PAT with Contents (read/write) access."
-  echo "  Create one at: https://github.com/settings/personal-access-tokens/new"
-  printf "  GitHub PAT: "
-  read -rs GITHUB_TOKEN
-  echo ""
-
-  # Store credential for git
-  git config --global credential.helper store
-  printf "https://x-access-token:%s@github.com\n" "$GITHUB_TOKEN" \
-    > "$HOME/.git-credentials"
-  chmod 600 "$HOME/.git-credentials"
-
-  # Authenticate gh CLI with the same token
-  echo "$GITHUB_TOKEN" | gh auth login --with-token
-  echo "  GitHub authenticated"
+if gh auth status &>/dev/null; then
+  info "GitHub auth"; skip
+else
+  info "GitHub auth: run  gh auth login && gh auth setup-git"
+fi
+if has glab && glab auth status &>/dev/null; then
+  info "GitLab auth"; skip
+else
+  info "GitLab auth: run  glab auth login   (choose HTTPS, git credential helper: yes)"
 fi
 
 # ─── 7. Clone dotfiles and run install.sh ─────────────────────
@@ -167,7 +176,7 @@ fi
 if ! has fnm; then
   info "Installing fnm..."
   curl -fsSL https://fnm.vercel.app/install -o /tmp/fnm-install.sh
-  bash /tmp/fnm-install.sh
+  bash /tmp/fnm-install.sh --skip-shell   # ~/.zshrc.local sets up fnm; keep ~/.zshrc untouched
   export PATH="$HOME/.local/share/fnm:$PATH"
   eval "$(fnm env)"
 else
@@ -189,10 +198,8 @@ export PATH="$HOME/.local/share/fnm:$PATH"
 has fnm && eval "$(fnm env)"
 
 if ! has pnpm; then
-  info "Installing pnpm..."
-  curl -fsSL https://get.pnpm.io/install.sh | sh -
-  export PNPM_HOME="$HOME/.local/share/pnpm"
-  export PATH="$PNPM_HOME:$PATH"
+  info "Installing pnpm..."   # via npm: the standalone installer edits ~/.zshrc
+  npm install -g pnpm
 else
   info "pnpm"
   skip
@@ -201,11 +208,72 @@ fi
 # ─── 10. Install Claude Code CLI ─────────────────────────────
 
 if ! has claude; then
-  info "Installing Claude Code CLI..."
-  pnpm add -g @anthropic-ai/claude-code
+  info "Installing Claude Code CLI (native installer, into ~/.local/bin)..."
+  curl -fsSL https://claude.ai/install.sh -o /tmp/claude-install.sh
+  bash /tmp/claude-install.sh
+  export PATH="$HOME/.local/bin:$PATH"
 else
   info "Claude Code CLI"
   skip
+fi
+
+# ─── 10b. Rex server (apt repo, user service, linger) ────────
+# Personal Rex server reachable over the tailnet; the unit files come from
+# dotfiles (config/rex/systemd, linked by install.sh). Ubuntu ships an
+# unrelated Perl package called rex, hence the pin.
+
+if ! [ -f /etc/apt/sources.list.d/rex.sources ]; then
+  info "Adding the Rex apt repository..."
+  sudo mkdir -p -m 755 /etc/apt/keyrings
+  curl -fsSL https://pkgs.superlogical.com/rex/keys/rex-archive-keyring.gpg \
+    | sudo tee /etc/apt/keyrings/rex-archive-keyring.gpg >/dev/null
+  sudo tee /etc/apt/sources.list.d/rex.sources >/dev/null <<SRC
+Types: deb
+URIs: https://pkgs.superlogical.com/rex/apt
+Suites: snapshot
+Components: main
+Architectures: $(dpkg --print-architecture)
+Signed-By: /etc/apt/keyrings/rex-archive-keyring.gpg
+SRC
+  sudo tee /etc/apt/preferences.d/rex >/dev/null <<PIN
+Package: rex
+Pin: origin pkgs.superlogical.com
+Pin-Priority: 1001
+PIN
+  sudo apt update
+fi
+
+if ! has rex; then
+  info "Installing Rex..."
+  sudo apt install -y rex
+else
+  info "Rex"
+  skip
+fi
+
+if [ -f "$HOME/.config/systemd/user/rex.service" ]; then
+  if systemctl --user is-active -q rex; then
+    info "Rex server service"; skip
+  else
+    info "Starting the Rex server service..."
+    systemctl --user daemon-reload
+    systemctl --user enable -q --now rex rex-save.timer
+  fi
+  if [ "$(loginctl show-user "$USER" -p Linger --value 2>/dev/null)" != "yes" ]; then
+    info "Keeping user services running after logout (linger)..."
+    sudo loginctl enable-linger "$USER"
+  fi
+fi
+
+# ─── 10c. Clone the repo tree ────────────────────────────────
+# ~/.repos.local lists "<dir> <url>" under ~/Code (see repos.local.example).
+# Clones need the forge logins above; failures are reported, not fatal.
+
+if [ -f "$HOME/.repos.local" ]; then
+  info "Cloning repos from ~/.repos.local..."
+  "$DOTFILES_DIR/bin/clone-repos" || true
+else
+  info "No ~/.repos.local: copy repos.local.example there and run clone-repos"
 fi
 
 # ─── 11. Create ~/.zshrc.local stub ──────────────────────────
@@ -276,18 +344,21 @@ check "zsh"       zsh
 check "neovim"    nvim
 check "tmux"      tmux
 check "gh"        gh
+check "glab"      glab
 check "aws"       aws
 check "uv"        uv
 check "node"      node
 check "pnpm"      pnpm
 check "claude"    claude
 check "tailscale" tailscale
+printf "  %-12s %s\n" "rex" "$(has rex && systemctl --user is-active rex 2>/dev/null || echo NOT FOUND)"
 
 echo ""
 echo "Next steps:"
 echo "  1. Log out and back in (or run: exec zsh)"
-echo "  2. Authenticate Claude: claude login"
-echo "  3. Configure notifications: ~/.claude/hooks/.env"
-echo "  4. Set up AWS credentials if using SNS/SES: aws configure"
-echo "  5. Test: dev-workspace"
+echo "  2. Log in: gh auth login && gh auth setup-git; glab auth login; claude"
+echo "  3. Edit ~/.repos.local and run clone-repos"
+echo "  4. Configure notifications: ~/.claude/hooks/.env"
+echo "  5. Set up AWS credentials if using SNS/SES: aws configure"
+echo "  6. Rex: add this host in the Mac app, then rx tab / rx ws from a shell"
 echo ""

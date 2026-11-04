@@ -14,7 +14,7 @@ cd ~/Code/dotfiles
 
 ## Server Setup
 
-`server-bootstrap.sh` provisions a fresh Ubuntu server as a headless dev environment. It installs system packages, dev toolchains (Node via fnm, Python via uv), Tailscale, GitHub CLI, AWS CLI, Claude Code, and then clones this repo and runs `install.sh`.
+`server-bootstrap.sh` provisions a fresh Ubuntu server as a headless dev environment. It installs system packages, dev toolchains (Node via fnm, Python via uv), Tailscale, GitHub and GitLab CLIs, AWS CLI, Claude Code, a personal [Rex](https://superlogical.com) server as a user service, and then clones this repo, runs `install.sh` and clones the repos listed in `~/.repos.local` (see `repos.local.example`). Logins (`gh`, `glab`, `claude`) are yours to run afterwards.
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/cmotta/dotfiles/master/server-bootstrap.sh | bash
@@ -85,6 +85,7 @@ Every config sources a `.local` counterpart that is **never committed**. Use the
 | `~/.tmux.conf.local` | Status bar overrides |
 | `~/.vimrc.bundles.local` | Extra vim plugins |
 | `~/.aliases.local` | Extra aliases |
+| `~/.repos.local` | Repos to clone under `~/Code`, by topic (`clone-repos`) |
 
 See the `*.local.example` files in this repo for commented templates. `ssh_config.example` is copied to `~/.ssh/config` on first install.
 
