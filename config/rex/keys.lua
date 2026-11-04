@@ -18,9 +18,3 @@ end
 rex.bind("resize/=",      "pane.balance")
 rex.bind("resize/escape", "client.mode.exit")
 rex.bind("resize/enter",  "client.mode.exit")
-
--- Focus by direction, vim keys. The app's default is cmd+opt+arrows; this
--- adds the hjkl spelling without a mode.
-for key, direction in pairs{ h = "left", l = "right", k = "up", j = "down" } do
-  rex.bind("cmd+shift+" .. key, "pane.focus", { direction = direction })
-end
