@@ -8,6 +8,9 @@ _rx() {
     'run:run a command and report its state to Rex'
     'next:jump to the next pane waiting on you'
     'layouts:list layouts'
+    'save:record the program running in each pane'
+    'restore:type the saved programs back; add run to run them'
+    'saved:show the saved record'
   )
   if (( CURRENT == 2 )); then
     _describe 'rx verb' verbs
@@ -25,6 +28,7 @@ _rx() {
            5) _files -/ ;;
          esac ;;
     run) shift 2 words; (( CURRENT -= 2 )); _normal ;;
+    restore) (( CURRENT == 3 )) && _describe 'mode' '(run:type and run the commands)' ;;
   esac
 }
 

@@ -6,6 +6,9 @@
 #   rx run CMD...                       run CMD, report working then done/error
 #   rx next                             jump to the next pane waiting on you
 #   rx layouts                          list the layouts
+#   rx save                             record the program running in each pane
+#   rx restore [run]                    type the saved programs back (run: and run them)
+#   rx saved                            show the record
 
 function rx() {
   local verb="${1:-help}"; shift 2>/dev/null
@@ -16,7 +19,10 @@ function rx() {
     run)     _rx_run "$@" ;;
     next)    rex do next_blocked ;;
     layouts) sed -n 's/^  \([a-z_]*\) = function.*/\1/p' ~/.config/rex/layouts.lua ;;
-    help|*)  sed -n '4,9p' "${(%):-%x}" ;;
+    save)    rex do ~/.config/rex/sessions.lua op=save ;;
+    restore) rex do ~/.config/rex/sessions.lua op=restore run="${1:-0}" ;;
+    saved)   rex do ~/.config/rex/sessions.lua op=show ;;
+    help|*)  sed -n '4,12p' "${(%):-%x}" ;;
   esac
 }
 

@@ -1,0 +1,24 @@
+# Personal Rex server as a user service. Install (Linux):
+#   ln -s ~/.config/rex/systemd/*.{service,timer} ~/.config/systemd/user/
+#   systemctl --user daemon-reload && systemctl --user enable --now rex rex-save.timer
+#   loginctl enable-linger $USER     # keep it running when you are logged out
+# The server keeps sessions, tabs, layouts and each pane's directory across a
+# restart; the programs running in the panes are recorded by rex-save and
+# typed back with `rx restore`.
+[Unit]
+Description=Rex personal server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# Reachable from the tailnet on port 7297 through this host's tailscaled.
+# Only the node owner is admitted (default policy).
+ExecStart=/usr/bin/rex server run --extra-listen tailnet://:7297
+# Record the running programs before the server goes down.
+ExecStop=/usr/bin/rex do %h/.config/rex/sessions.lua op=save
+Restart=on-failure
+RestartSec=3
+Environment=TERM_PROGRAM=rex
+
+[Install]
+WantedBy=default.target

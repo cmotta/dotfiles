@@ -96,6 +96,13 @@ link_file "$DOTFILES_DIR/config/caddy" "$HOME/.config/caddy"
 # config/rex → ~/.config/rex (Rex terminal multiplexer: init.lua, actions, keys)
 link_file "$DOTFILES_DIR/config/rex" "$HOME/.config/rex"
 
+# config/rex/systemd → ~/.config/systemd/user (Linux: Rex server as a user service)
+if [ "$OS" = "linux" ]; then
+  for f in "$DOTFILES_DIR/config/rex/systemd/"*; do
+    link_file "$f" "$HOME/.config/systemd/user/$(basename "$f")"
+  done
+fi
+
 # ─── Git identity ──────────────────────────────────────────────
 if [ ! -f "$HOME/.gitconfig.local" ]; then
   echo ""

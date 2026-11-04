@@ -1,0 +1,8 @@
+[Unit]
+Description=Record the programs running in Rex panes
+After=rex.service
+Requisite=rex.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/rex do %h/.config/rex/sessions.lua op=save
