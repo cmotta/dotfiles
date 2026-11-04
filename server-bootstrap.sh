@@ -156,7 +156,7 @@ cd "$DOTFILES_DIR" && ./install.sh
 if ! has uv; then
   info "Installing uv..."
   curl -LsSf https://astral.sh/uv/install.sh -o /tmp/uv-install.sh
-  sh /tmp/uv-install.sh
+  sh /tmp/uv-install.sh --no-modify-path   # ~/.zshrc.local adds ~/.local/bin; keep ~/.zshrc untouched
   export PATH="$HOME/.local/bin:$PATH"
 else
   info "uv"
