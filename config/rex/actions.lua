@@ -17,6 +17,18 @@ rex.action{
   end,
 }
 
+-- Call a session-scoped method; attach first only when the connection is not
+-- attached. Never detach: from a key the connection is the app's own, and
+-- detaching it from a session it shows breaks the app.
+local function session_call(method, args)
+  local r, err = rex.call(method, args)
+  if r == nil and err and err:find("not attached") then
+    rex.call("session.attach", { session_id = args.session_id })
+    r, err = rex.call(method, args)
+  end
+  return r, err
+end
+
 -- Open a tab in a session, from wherever you are. The session is a topic
 -- (ed, twk, dotfiles), the tab is a task, the path is where its shells start.
 -- Creates the session when the label is new. From a shell: `rt`, see
@@ -56,15 +68,8 @@ rex.action{
 
     local window_id
     if session_id then
-      -- A window can only be added to a session this connection is attached to.
-      if session_id ~= ctx.session_id then
-        assert(rex.call("session.attach", { session_id = session_id }))
-      end
-      local w = assert(rex.call("session.new_window", { session_id = session_id, layout = layout }))
+      local w = assert(session_call("session.new_window", { session_id = session_id, layout = layout }))
       window_id = w.window_id
-      if session_id ~= ctx.session_id then
-        rex.call("session.detach", { session_id = session_id })
-      end
     else
       local r = assert(rex.call("session.create", {
         label = args.session,
@@ -92,7 +97,7 @@ rex.action{
 local WAITING = { blocked = 1, error = 2, done = 3 }
 
 local function status_of(session_id, block_id)
-  local st = rex.call("block.method", {
+  local st = session_call("block.method", {
     session_id = session_id, block_id = block_id, method = "program_status",
   })
   local best
@@ -113,12 +118,9 @@ rex.action{
   keywords = "blocked waiting next jump agent question permission error done",
   run = function(ctx, args)
     local sessions = assert(rex.call("session.list", {})).sessions or {}
-    local found, attached = {}, {}
+    local found = {}
     for _, s in ipairs(sessions) do
-      if s.session_id ~= ctx.session_id and rex.call("session.attach", { session_id = s.session_id }) then
-        attached[#attached + 1] = s.session_id
-      end
-      local lb = rex.call("session.list_blocks", { session_id = s.session_id })
+      local lb = session_call("session.list_blocks", { session_id = s.session_id })
       for _, b in ipairs(lb and lb.blocks or {}) do
         if b.placement == "placed" and b.flavor == "com.superlogical.terminal.shell" then
           local w = status_of(s.session_id, b.block_id)
@@ -144,12 +146,11 @@ rex.action{
     end
 
     if target then
-      assert(rex.call("session.focus_block", { session_id = target.session_id, block_id = target.block_id }))
+      assert(session_call("session.focus_block", { session_id = target.session_id, block_id = target.block_id }))
       if ctx.origin == "key" or ctx.origin == "palette" then
         rex.client.queue("session.select", { session_id = target.session_id, window_id = target.window_id })
       end
     end
-    for _, id in ipairs(attached) do rex.call("session.detach", { session_id = id }) end
 
     if not target then return { found = 0 } end
     return { found = #found, session = target.session, state = target.state, kind = target.kind,
