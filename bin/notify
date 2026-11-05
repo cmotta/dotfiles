@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # notify: send myself a short notification.
 #
-#   notify [-p low|default|high|urgent] [-t TAG] TITLE [BODY]
+#   notify [-l] [-p low|default|high|urgent] [-t TAG] TITLE [BODY]
 #
 # Delivers to every channel this machine has:
 #   - the desktop: terminal-notifier or osascript on macOS, notify-send on Linux
@@ -9,20 +9,24 @@
 #     the title is prefixed with the host name so remote pushes say where
 #
 # TAG is an ntfy tag (an emoji short code such as x or white_check_mark).
+# -l rings only this desktop and skips ntfy, for news another machine
+# already pushed.
 # Exits 1 when nothing could deliver.
 set -euo pipefail
 
 priority=default
 tag=""
-while getopts "p:t:" opt; do
+local_only=0
+while getopts "lp:t:" opt; do
   case "$opt" in
+    l) local_only=1 ;;
     p) priority="$OPTARG" ;;
     t) tag="$OPTARG" ;;
-    *) echo "usage: notify [-p PRIORITY] [-t TAG] TITLE [BODY]" >&2; exit 2 ;;
+    *) echo "usage: notify [-l] [-p PRIORITY] [-t TAG] TITLE [BODY]" >&2; exit 2 ;;
   esac
 done
 shift $((OPTIND - 1))
-[[ $# -ge 1 ]] || { echo "usage: notify [-p PRIORITY] [-t TAG] TITLE [BODY]" >&2; exit 2; }
+[[ $# -ge 1 ]] || { echo "usage: notify [-l] [-p PRIORITY] [-t TAG] TITLE [BODY]" >&2; exit 2; }
 title="$1"
 body="${2:-}"
 
@@ -53,7 +57,7 @@ case "$(uname -s)" in
     ;;
 esac
 
-if [[ -n "${NTFY_URL:-}" ]]; then
+if [[ -n "${NTFY_URL:-}" && $local_only -eq 0 ]]; then
   headers=(-H "Title: [$(hostname -s)] $title" -H "Priority: $priority")
   [[ -n "$tag" ]] && headers+=(-H "Tags: $tag")
   [[ -n "${NTFY_TOKEN:-}" ]] && headers+=(-H "Authorization: Bearer $NTFY_TOKEN")

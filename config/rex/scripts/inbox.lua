@@ -13,12 +13,18 @@
 -- Delivery goes through `notify` (bin/notify): the desktop on macOS, ntfy
 -- where ~/.notify.local names a topic. It runs all the time as a launchd
 -- agent on macOS (config/rex/launchd) and a systemd user unit on Linux
--- (config/rex/systemd); both restart it when the server goes away.
+-- (config/rex/systemd); both restart it when the server goes away. On macOS
+-- install.sh also starts one agent per host in `rex hosts`, with host=LABEL,
+-- so panes on those servers ring this desktop too.
 --
 -- Args: done_after=SECONDS   notify=COMMAND (default "notify")
+--       host=LABEL   when run against another server (rex -S LABEL do ...):
+--                    titles start with LABEL and only this desktop rings,
+--                    since that host's own inbox already pushes to the phone.
 
 local done_after = tonumber(rex.args.done_after) or 10
 local notify_cmd = rex.args.notify or "notify"
+local host = rex.args.host
 
 -- Last state seen per record, keyed by block and record ID.
 local seen = {}
@@ -67,8 +73,13 @@ local function notify(ctx, record, elapsed)
   local title = session_label(ctx.session_id)
   local pane = block_label(ctx.session_id, ctx.block_id)
   if pane then title = title .. " / " .. pane end
+  if host then title = host .. ": " .. title end
   local body, priority, tag = describe(record, elapsed)
-  local r = rex.exec({ notify_cmd, "-p", priority, "-t", tag, title, body })
+  local argv = { notify_cmd, "-p", priority, "-t", tag }
+  if host then argv[#argv + 1] = "-l" end
+  argv[#argv + 1] = title
+  argv[#argv + 1] = body
+  local r = rex.exec(argv)
   if not r or not r.ok then
     io.stderr:write("inbox: notify failed: " .. ((r and r.stderr) or "no result") .. "\n")
   end

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  macOS LaunchAgent template for the Rex inbox on another server
+  (config/rex/scripts/inbox.lua with host=LABEL).
+
+  install.sh writes one copy per host that `rex hosts` lists, so a pane on
+  a remote server rings this desktop like a local one. The script runs
+  `rex -S HOST do inbox.lua`; while the host is unreachable it exits and
+  launchd retries every ThrottleInterval seconds.
+
+  __REX_HOST__ is the host's label; the other __REX_*__ placeholders are
+  resolved to absolute paths by install.sh.
+-->
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>local.rex-inbox@__REX_HOST__</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>__REX_BIN__</string>
+		<string>-S</string>
+		<string>__REX_HOST__</string>
+		<string>do</string>
+		<string>__REX_SCRIPT__</string>
+		<string>--all</string>
+		<string>--autostart=false</string>
+		<string>host=__REX_HOST__</string>
+	</array>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>PATH</key>
+		<string>__REX_PATH__</string>
+	</dict>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>KeepAlive</key>
+	<true/>
+	<key>ThrottleInterval</key>
+	<integer>60</integer>
+	<key>StandardOutPath</key>
+	<string>__REX_LOG__</string>
+	<key>StandardErrorPath</key>
+	<string>__REX_LOG__</string>
+</dict>
+</plist>

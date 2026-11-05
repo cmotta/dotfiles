@@ -304,15 +304,15 @@ if [ "$OS" = "macos" ]; then
     echo "  rex not installed — get the app from https://superlogical.com"
   else
     mkdir -p "$HOME/Library/Logs"
-    for plist in "$DOTFILES_DIR/config/rex/launchd/"*.plist; do
-      case "$plist" in *.resolved.plist) continue ;; esac
-      label="$(basename "$plist" .plist)"
-      script="$HOME/.config/rex/scripts/${label#local.rex-}.lua"
-      [ "$label" = "local.rex-save" ] && script="$HOME/.config/rex/scripts/sessions.lua"
-      resolved="$DOTFILES_DIR/config/rex/launchd/$label.resolved.plist"
-      agent="$HOME/Library/LaunchAgents/$label.plist"
+    # resolve_rex_agent TEMPLATE LABEL SCRIPT [HOST]: bake the placeholders
+    # and say how to (re)load the agent.
+    resolve_rex_agent() {
+      local plist="$1" label="$2" script="$3" host="${4:-}"
+      local resolved="$DOTFILES_DIR/config/rex/launchd/$label.resolved.plist"
+      local agent="$HOME/Library/LaunchAgents/$label.plist"
       sed -e "s#__REX_BIN__#$rex_bin#" \
           -e "s#__REX_SCRIPT__#$script#" \
+          -e "s#__REX_HOST__#$host#g" \
           -e "s#__REX_PATH__#$HOME/.bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin#" \
           -e "s#__REX_LOG__#$HOME/Library/Logs/$label.log#" \
           "$plist" > "$resolved"
@@ -324,6 +324,20 @@ if [ "$OS" = "macos" ]; then
         echo "  To start $label:"
         echo "    cp \"$resolved\" \"$agent\" && launchctl bootstrap gui/$(id -u) \"$agent\""
       fi
+    }
+    for plist in "$DOTFILES_DIR/config/rex/launchd/"*.plist; do
+      case "$plist" in *.resolved.plist|*@.plist) continue ;; esac
+      label="$(basename "$plist" .plist)"
+      script="$HOME/.config/rex/scripts/${label#local.rex-}.lua"
+      [ "$label" = "local.rex-save" ] && script="$HOME/.config/rex/scripts/sessions.lua"
+      resolve_rex_agent "$plist" "$label" "$script"
+    done
+    # One inbox agent per stored host, so panes on other servers ring this
+    # desktop too. `rex hosts` lists a host once per label; keep one label
+    # per endpoint.
+    "$rex_bin" hosts 2>/dev/null | awk 'NR > 1 && !seen[$2]++ { print $1 }' | while read -r host; do
+      resolve_rex_agent "$DOTFILES_DIR/config/rex/launchd/local.rex-inbox@.plist" \
+        "local.rex-inbox@$host" "$HOME/.config/rex/scripts/inbox.lua" "$host"
     done
   fi
 fi
