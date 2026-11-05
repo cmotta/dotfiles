@@ -11,7 +11,8 @@
 -- for it again.
 --
 -- Delivery goes through `notify` (bin/notify): the desktop on macOS, ntfy
--- where ~/.notify.local names a topic. It runs all the time as a launchd
+-- where ~/.notify.local names a topic. On macOS a click on the banner goes
+-- to the pane (notify -x, bin/rex-goto, the goto action). It runs all the time as a launchd
 -- agent on macOS (config/rex/launchd) and a systemd user unit on Linux
 -- (config/rex/systemd); both restart it when the server goes away. On macOS
 -- install.sh also starts one agent per host in `rex hosts`, with host=LABEL,
@@ -77,6 +78,11 @@ local function notify(ctx, record, elapsed)
   local body, priority, tag = describe(record, elapsed)
   local argv = { notify_cmd, "-p", priority, "-t", tag }
   if host then argv[#argv + 1] = "-l" end
+  -- A click on the banner lands in the pane (bin/rex-goto, macOS only).
+  local goto_cmd = "rex-goto " .. (host and ("-S " .. host .. " ") or "")
+    .. ctx.session_id .. " " .. ctx.block_id
+  argv[#argv + 1] = "-x"
+  argv[#argv + 1] = goto_cmd
   argv[#argv + 1] = title
   argv[#argv + 1] = body
   local r = rex.exec(argv)

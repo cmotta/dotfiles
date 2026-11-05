@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# rex-goto: bring a Rex pane to the front.
+#
+#   rex-goto [-S HOST] SESSION_ID BLOCK_ID
+#
+# Runs the goto action (config/rex/actions/goto.lua) on the server that owns
+# the pane, which focuses it and shows its session in the app, then brings
+# the app to the front on macOS. Built for notification clicks (the inbox
+# passes it through notify -x), where PATH is minimal: the rex binary is
+# looked up like install.sh does.
+set -euo pipefail
+
+host=""
+if [[ "${1:-}" == "-S" ]]; then
+  host="${2:?rex-goto: -S needs a host}"
+  shift 2
+fi
+[[ $# -eq 2 ]] || { echo "usage: rex-goto [-S HOST] SESSION_ID BLOCK_ID" >&2; exit 2; }
+
+rex_bin="$(command -v rex 2>/dev/null || true)"
+[[ -n "$rex_bin" ]] || rex_bin="$HOME/Library/Application Support/com.superlogical.rex/RexServer/Versions/Current/Rex Server.app/Contents/MacOS/rex"
+[[ -x "$rex_bin" ]] || { echo "rex-goto: rex not found" >&2; exit 1; }
+
+if [[ -n "$host" ]]; then
+  "$rex_bin" -S "$host" do goto "session_id=$1" "block_id=$2" >/dev/null
+else
+  "$rex_bin" do goto "session_id=$1" "block_id=$2" >/dev/null
+fi
+
+[[ "$(uname -s)" == "Darwin" ]] && open -b com.superlogical.rex 2>/dev/null || true

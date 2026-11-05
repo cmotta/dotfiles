@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # notify: send myself a short notification.
 #
-#   notify [-l] [-p low|default|high|urgent] [-t TAG] TITLE [BODY]
+#   notify [-l] [-p low|default|high|urgent] [-t TAG] [-x COMMAND] TITLE [BODY]
 #
 # Delivers to every channel this machine has:
 #   - the desktop: terminal-notifier or osascript on macOS, notify-send on Linux
@@ -10,23 +10,26 @@
 #
 # TAG is an ntfy tag (an emoji short code such as x or white_check_mark).
 # -l rings only this desktop and skips ntfy, for news another machine
-# already pushed.
+# already pushed. -x runs a shell command when the banner is clicked
+# (macOS with terminal-notifier only; it runs with this PATH).
 # Exits 1 when nothing could deliver.
 set -euo pipefail
 
 priority=default
 tag=""
 local_only=0
-while getopts "lp:t:" opt; do
+on_click=""
+while getopts "lp:t:x:" opt; do
   case "$opt" in
     l) local_only=1 ;;
+    x) on_click="$OPTARG" ;;
     p) priority="$OPTARG" ;;
     t) tag="$OPTARG" ;;
-    *) echo "usage: notify [-l] [-p PRIORITY] [-t TAG] TITLE [BODY]" >&2; exit 2 ;;
+    *) echo "usage: notify [-l] [-p PRIORITY] [-t TAG] [-x COMMAND] TITLE [BODY]" >&2; exit 2 ;;
   esac
 done
 shift $((OPTIND - 1))
-[[ $# -ge 1 ]] || { echo "usage: notify [-l] [-p PRIORITY] [-t TAG] TITLE [BODY]" >&2; exit 2; }
+[[ $# -ge 1 ]] || { echo "usage: notify [-l] [-p PRIORITY] [-t TAG] [-x COMMAND] TITLE [BODY]" >&2; exit 2; }
 title="$1"
 body="${2:-}"
 
@@ -41,7 +44,10 @@ case "$(uname -s)" in
     # repeats by title; osascript works out of the box but reports as
     # Script Editor, whose alerts land only in Notification Center.
     if command -v terminal-notifier >/dev/null; then
-      terminal-notifier -title "$title" -message "${body:-$title}" -group "$title" >/dev/null 2>&1 && delivered=1
+      tn=(-title "$title" -message "${body:-$title}" -group "$title")
+      # The click runs under Notification Center's bare PATH; carry ours.
+      [[ -n "$on_click" ]] && tn+=(-execute "export PATH='$PATH'; $on_click")
+      terminal-notifier "${tn[@]}" >/dev/null 2>&1 && delivered=1
     elif osascript -e 'on run argv' \
                  -e 'display notification (item 2 of argv) with title (item 1 of argv)' \
                  -e 'end run' "$title" "$body" 2>/dev/null; then
