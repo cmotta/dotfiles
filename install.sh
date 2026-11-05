@@ -304,7 +304,7 @@ if [ "$OS" = "macos" ]; then
     mkdir -p "$HOME/Library/Logs"
     sed -e "s#__REX_BIN__#$rex_bin#" \
         -e "s#__REX_SCRIPT__#$HOME/.config/rex/scripts/inbox.lua#" \
-        -e "s#__REX_PATH__#$HOME/.bin:/usr/local/bin:/usr/bin:/bin#" \
+        -e "s#__REX_PATH__#$HOME/.bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin#" \
         -e "s#__REX_LOG__#$HOME/Library/Logs/rex-inbox.log#" \
         "$DOTFILES_DIR/config/rex/launchd/local.rex-inbox.plist" > "$resolved"
     echo "  wrote  $resolved"

@@ -4,7 +4,7 @@
 #   notify [-p low|default|high|urgent] [-t TAG] TITLE [BODY]
 #
 # Delivers to every channel this machine has:
-#   - the desktop: osascript on macOS, notify-send on a Linux desktop
+#   - the desktop: terminal-notifier or osascript on macOS, notify-send on Linux
 #   - ntfy, when ~/.notify.local sets NTFY_URL (see notify.local.example);
 #     the title is prefixed with the host name so remote pushes say where
 #
@@ -33,7 +33,12 @@ delivered=0
 
 case "$(uname -s)" in
   Darwin)
-    if osascript -e 'on run argv' \
+    # terminal-notifier (brew) shows as its own app with banners and groups
+    # repeats by title; osascript works out of the box but reports as
+    # Script Editor, whose alerts land only in Notification Center.
+    if command -v terminal-notifier >/dev/null; then
+      terminal-notifier -title "$title" -message "${body:-$title}" -group "$title" >/dev/null 2>&1 && delivered=1
+    elif osascript -e 'on run argv' \
                  -e 'display notification (item 2 of argv) with title (item 1 of argv)' \
                  -e 'end run' "$title" "$body" 2>/dev/null; then
       delivered=1
