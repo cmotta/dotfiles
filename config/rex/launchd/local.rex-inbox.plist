@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  macOS LaunchAgent for the Rex inbox (config/rex/scripts/inbox.lua).
+
+  Runs `rex do inbox.lua` against the Rex app's server and turns program
+  status reports into notifications. It never starts a server of its own:
+  while the app is closed the script exits and launchd retries every
+  ThrottleInterval seconds, so it picks the server up when the app returns.
+
+  The __REX_*__ placeholders are resolved to absolute paths by install.sh
+  (launchd plists cannot expand ~ or $PATH).
+-->
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>local.rex-inbox</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>__REX_BIN__</string>
+		<string>do</string>
+		<string>__REX_SCRIPT__</string>
+		<string>--all</string>
+		<string>--autostart=false</string>
+	</array>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>PATH</key>
+		<string>__REX_PATH__</string>
+	</dict>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>KeepAlive</key>
+	<true/>
+	<key>ThrottleInterval</key>
+	<integer>30</integer>
+	<key>StandardOutPath</key>
+	<string>__REX_LOG__</string>
+	<key>StandardErrorPath</key>
+	<string>__REX_LOG__</string>
+</dict>
+</plist>

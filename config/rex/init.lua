@@ -8,6 +8,7 @@
 --   layouts.lua named pane layouts used by the open action
 --   lib.lua    helpers shared by the actions
 --   scripts/   `rex do` scripts that run outside the server (file and process access)
+--   launchd/   agent that keeps the inbox script running on macOS
 --   systemd/   user units for a Linux server
 
 -- Every file in actions/ registers itself; drop a file in, reload, done.

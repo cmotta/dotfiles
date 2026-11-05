@@ -1,0 +1,22 @@
+# Rex inbox: turn program status reports into notifications.
+# Runs config/rex/scripts/inbox.lua against the local server for as long as
+# rex.service runs. Deliveries go through ~/.bin/notify, so set NTFY_URL in
+# ~/.notify.local on a headless box.
+#
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now rex-inbox
+#   journalctl --user -u rex-inbox -f
+
+[Unit]
+Description=Rex inbox notifications
+After=rex.service
+BindsTo=rex.service
+
+[Service]
+ExecStart=/usr/bin/rex do %h/.config/rex/scripts/inbox.lua --all --autostart=false
+Environment=PATH=%h/.bin:/usr/local/bin:/usr/bin:/bin
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=rex.service

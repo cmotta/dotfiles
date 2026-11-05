@@ -13,6 +13,7 @@ vim/bundle/
 config/caddy/pki/
 config/caddy/data/
 config/caddy/*.resolved.plist
+config/rex/launchd/*.resolved.plist
 config/caddy/sites.d/*.caddy
 
 # OS junk
