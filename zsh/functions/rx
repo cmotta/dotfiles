@@ -19,9 +19,9 @@ function rx() {
     run)     _rx_run "$@" ;;
     next)    rex do next_blocked ;;
     layouts) sed -n 's/^  \([a-z_]*\) = function.*/\1/p' ~/.config/rex/layouts.lua ;;
-    save)    rex do ~/.config/rex/sessions.lua op=save ;;
-    restore) rex do ~/.config/rex/sessions.lua op=restore run="${1:-0}" ;;
-    saved)   rex do ~/.config/rex/sessions.lua op=show ;;
+    save)    rex do ~/.config/rex/scripts/sessions.lua op=save ;;
+    restore) rex do ~/.config/rex/scripts/sessions.lua op=restore run="${1:-0}" ;;
+    saved)   rex do ~/.config/rex/scripts/sessions.lua op=show ;;
     help|*)  sed -n '4,12p' "${(%):-%x}" ;;
   esac
 }

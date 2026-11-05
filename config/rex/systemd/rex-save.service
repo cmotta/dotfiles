@@ -5,4 +5,4 @@ Requisite=rex.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/rex do %h/.config/rex/sessions.lua op=save
+ExecStart=/usr/bin/rex do %h/.config/rex/scripts/sessions.lua op=save

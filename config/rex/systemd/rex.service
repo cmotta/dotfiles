@@ -15,7 +15,7 @@ Wants=network-online.target
 # Only the node owner is admitted (default policy).
 ExecStart=/usr/bin/rex server run --extra-listen tailnet://:7297
 # Record the running programs before the server goes down.
-ExecStop=/usr/bin/rex do %h/.config/rex/sessions.lua op=save
+ExecStop=/usr/bin/rex do %h/.config/rex/scripts/sessions.lua op=save
 Restart=on-failure
 RestartSec=3
 Environment=TERM_PROGRAM=rex

@@ -3,13 +3,13 @@
 -- restart; only running programs die. This script records what each pane
 -- runs so they can be typed back after the restart.
 --
---   rex do ~/.config/rex/sessions.lua op=save          record running programs
---   rex do ~/.config/rex/sessions.lua op=restore       type them back, no Enter
---   rex do ~/.config/rex/sessions.lua op=restore run=1 type them and run them
---   rex do ~/.config/rex/sessions.lua op=show          print the record
+--   rex do ~/.config/rex/scripts/sessions.lua op=save          record running programs
+--   rex do ~/.config/rex/scripts/sessions.lua op=restore       type them back, no Enter
+--   rex do ~/.config/rex/scripts/sessions.lua op=restore run=1 type them and run them
+--   rex do ~/.config/rex/scripts/sessions.lua op=show          print the record
 --
 -- Run it on the machine that hosts the server: it reads the process table
--- there. From a shell use `rx save` and `rx restore`. On miles a systemd timer
+-- there. From a shell use `rx save` and `rx restore`. On a Linux server a timer
 -- saves every two minutes and the service saves again on stop.
 
 local args = rex.args or {}
