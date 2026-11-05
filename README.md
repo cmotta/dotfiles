@@ -87,6 +87,7 @@ Every config sources a `.local` counterpart that is **never committed**. Use the
 | `~/.aliases.local` | Extra aliases |
 | `~/.repos.local` | Repos to clone under `~/Code`, by topic (`clone-repos`) |
 | `~/.notify.local` | ntfy topic for `notify` pushes to your phone |
+| `~/.rex-backup.local` | Where `rex-backup` keeps and mirrors copies of the Rex server state |
 
 See the `*.local.example` files in this repo for commented templates. `ssh_config.example` is copied to `~/.ssh/config` on first install.
 

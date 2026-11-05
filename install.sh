@@ -173,6 +173,10 @@ if [ ! -f "$HOME/.notify.local" ]; then
   cp "$DOTFILES_DIR/notify.local.example" "$HOME/.notify.local"
   echo "  copied notify.local.example → ~/.notify.local (set NTFY_URL for pushes)"
 fi
+if [ ! -f "$HOME/.rex-backup.local" ]; then
+  cp "$DOTFILES_DIR/rex-backup.local.example" "$HOME/.rex-backup.local"
+  echo "  copied rex-backup.local.example → ~/.rex-backup.local (set REX_BACKUP_REMOTE to mirror)"
+fi
 
 # ─── Legacy cleanup ───────────────────────────────────────────
 if [ -f "$HOME/.git_template/HEAD" ] && \

@@ -1,10 +1,11 @@
 # Personal Rex server as a user service. Install (Linux):
 #   ln -s ~/.config/rex/systemd/*.{service,timer} ~/.config/systemd/user/
-#   systemctl --user daemon-reload && systemctl --user enable --now rex rex-save.timer
+#   systemctl --user daemon-reload && systemctl --user enable --now rex rex-save.timer rex-backup.timer
 #   loginctl enable-linger $USER     # keep it running when you are logged out
 # The server keeps sessions, tabs, layouts and each pane's directory across a
 # restart; the programs running in the panes are recorded by rex-save and
-# typed back with `rx restore`.
+# typed back with `rx restore`. rex-backup.timer copies the state daily
+# (bin/rex-backup).
 [Unit]
 Description=Rex personal server
 After=network-online.target

@@ -1,0 +1,13 @@
+# rex-backup: where the dated copies of the Rex server state go.
+# Copied to ~/.rex-backup.local by install.sh and sourced by rex-backup;
+# the flags -d, -k and -r override these.
+
+# Local directory for the dated copies (default ~/.local/state/rex-backups).
+#REX_BACKUP_DIR=$HOME/.local/state/rex-backups
+
+# How many dated copies to keep (default 14).
+#REX_BACKUP_KEEP=14
+
+# An rsync target to mirror the copies to, reached without a password
+# (an ssh key or Tailscale SSH), such as another box on your tailnet.
+#REX_BACKUP_REMOTE=backup-box:backups/rex

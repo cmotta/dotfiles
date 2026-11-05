@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+# rex-backup: keep dated copies of the Rex server's state.
+#
+#   rex-backup [-d DEST] [-k KEEP] [-r REMOTE]
+#
+# The server keeps sessions, tabs, layouts and pane directories in an SQLite
+# snapshot under its state directory, and rex-save writes the running
+# programs next to it (programs.json). A power cut cannot corrupt the
+# snapshot (SQLite journals it) but a dead disk takes everything, so this
+# copies the state directory to DEST/<stamp>/, taking each snapshot through
+# SQLite's backup API so the copy is consistent while the server runs. It
+# keeps the newest KEEP stamps and mirrors DEST to REMOTE, an rsync target
+# such as box:backups/rex, when one is set.
+#
+# Defaults: DEST ~/.local/state/rex-backups, KEEP 14, no REMOTE. The same
+# three can be set in ~/.rex-backup.local (see rex-backup.local.example);
+# flags win. Linux and macOS; needs python3 and rsync.
+#
+# Restore: stop the server, copy <stamp>/servers/<id>/snapshot/snapshot.db
+# over the live one, delete snapshot.db-wal and snapshot.db-shm beside it,
+# start the server, then `rx restore` for the programs.
+set -euo pipefail
+
+usage() { echo "usage: rex-backup [-d DEST] [-k KEEP] [-r REMOTE]" >&2; exit 2; }
+
+# shellcheck disable=SC1090
+[[ -f "$HOME/.rex-backup.local" ]] && . "$HOME/.rex-backup.local"
+dest="${REX_BACKUP_DIR:-$HOME/.local/state/rex-backups}"
+keep="${REX_BACKUP_KEEP:-14}"
+remote="${REX_BACKUP_REMOTE:-}"
+while getopts "d:k:r:" opt; do
+  case "$opt" in
+    d) dest="$OPTARG" ;;
+    k) keep="$OPTARG" ;;
+    r) remote="$OPTARG" ;;
+    *) usage ;;
+  esac
+done
+shift $((OPTIND - 1))
+[[ $# -eq 0 ]] || usage
+
+case "$(uname -s)" in
+  Darwin) state="$HOME/Library/Application Support/rex" ;;
+  *) state="${XDG_STATE_HOME:-$HOME/.local/state}/rex" ;;
+esac
+[[ -d "$state/servers" ]] || { echo "rex-backup: no Rex state at $state" >&2; exit 1; }
+
+stamp="$(date +%Y-%m-%d_%H%M%S)"
+target="$dest/$stamp"
+mkdir -p "$target"
+
+# Everything except the live database files, locks, sockets and server logs.
+rsync -a \
+  --exclude 'snapshot.db' --exclude 'snapshot.db-wal' --exclude 'snapshot.db-shm' \
+  --exclude '*.lock' --exclude '*.sock' --exclude '*.log' \
+  "$state/" "$target/"
+
+# A consistent copy of each snapshot, through SQLite's online backup API.
+count=0
+while IFS= read -r -d '' db; do
+  python3 - "$db" "$target/${db#"$state"/}" <<'PY'
+import sqlite3
+import sys
+
+src = sqlite3.connect(sys.argv[1])
+dst = sqlite3.connect(sys.argv[2])
+with dst:
+    src.backup(dst)
+dst.close()
+src.close()
+PY
+  count=$((count + 1))
+done < <(find "$state/servers" -name snapshot.db -print0)
+
+# Keep the newest KEEP stamps; their names sort by date.
+if (( keep > 0 )); then
+  while IFS= read -r old; do
+    [[ -n "$old" ]] && rm -rf "$old"
+  done < <(find "$dest" -mindepth 1 -maxdepth 1 -type d | sort -r | tail -n "+$((keep + 1))")
+fi
+
+if [[ -n "$remote" ]]; then
+  rsync -a --delete -e "ssh -o BatchMode=yes" "$dest/" "$remote/" \
+    || { echo "rex-backup: mirror to $remote failed" >&2; exit 1; }
+fi
+
+echo "rex-backup: $count snapshot(s) → $target${remote:+, mirrored to $remote}"

@@ -1,0 +1,7 @@
+[Unit]
+Description=Copy the Rex server state to the backup directory
+
+[Service]
+Type=oneshot
+ExecStart=%h/.bin/rex-backup
+Environment=PATH=%h/.bin:/usr/local/bin:/usr/bin:/bin
