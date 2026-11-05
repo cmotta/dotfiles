@@ -36,7 +36,11 @@ elif [ "$ctx_pct_int" -ge 70 ]; then BAR_COLOR='\033[33m'  # yellow
 else BAR_COLOR='\033[32m'; fi                               # green
 
 filled=$((ctx_pct_int / 10)); empty=$((10 - filled))
-bar=$(printf "%${filled}s" | tr ' ' '█')$(printf "%${empty}s" | tr ' ' '░')
+# Built char by char: GNU tr works on bytes and tears multibyte glyphs apart.
+bar=""; i=0
+while [ "$i" -lt "$filled" ]; do bar="${bar}█"; i=$((i + 1)); done
+i=0
+while [ "$i" -lt "$empty" ]; do bar="${bar}░"; i=$((i + 1)); done
 
 cost_fmt=$(printf '$%.2f' "$cost_usd")
 
