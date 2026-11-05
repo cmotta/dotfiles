@@ -10,7 +10,11 @@
 --   scripts/   `rex do` scripts that run outside the server (file and process access)
 --   systemd/   user units for a Linux server
 
-require("actions.ping")
-require("actions.open")
-require("actions.next_blocked")
+-- Every file in actions/ registers itself; drop a file in, reload, done.
+local here = debug.getinfo(1, "S").source:match("^@(.*)/[^/]*$") or (os.getenv("HOME") .. "/.config/rex")
+local listing = rex.exec({ "ls", "actions" }, { cwd = here })
+for file in (listing.stdout or ""):gmatch("([%w_%-]+)%.lua") do
+  require("actions." .. file)
+end
+
 require("keys")
