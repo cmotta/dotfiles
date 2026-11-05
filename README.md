@@ -86,6 +86,7 @@ Every config sources a `.local` counterpart that is **never committed**. Use the
 | `~/.vimrc.bundles.local` | Extra vim plugins |
 | `~/.aliases.local` | Extra aliases |
 | `~/.repos.local` | Repos to clone under `~/Code`, by topic (`clone-repos`) |
+| `~/.notify.local` | ntfy topic for `notify` pushes to your phone |
 
 See the `*.local.example` files in this repo for commented templates. `ssh_config.example` is copied to `~/.ssh/config` on first install.
 

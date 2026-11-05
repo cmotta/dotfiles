@@ -1,0 +1,8 @@
+# ~/.notify.local: where `notify` pushes besides this machine's desktop.
+# Sourced by bash; keep it to KEY=VALUE lines. Never committed.
+#
+# ntfy (https://ntfy.sh, or your own server). Subscribe to the topic from the
+# ntfy app on your phone and laptop. A public server needs a topic nobody can
+# guess; a private one may also need a token.
+#NTFY_URL=https://ntfy.sh/change-me-to-a-long-random-topic
+#NTFY_TOKEN=

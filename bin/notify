@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# notify: send myself a short notification.
+#
+#   notify [-p low|default|high|urgent] [-t TAG] TITLE [BODY]
+#
+# Delivers to every channel this machine has:
+#   - the desktop: osascript on macOS, notify-send on a Linux desktop
+#   - ntfy, when ~/.notify.local sets NTFY_URL (see notify.local.example);
+#     the title is prefixed with the host name so remote pushes say where
+#
+# TAG is an ntfy tag (an emoji short code such as x or white_check_mark).
+# Exits 1 when nothing could deliver.
+set -euo pipefail
+
+priority=default
+tag=""
+while getopts "p:t:" opt; do
+  case "$opt" in
+    p) priority="$OPTARG" ;;
+    t) tag="$OPTARG" ;;
+    *) echo "usage: notify [-p PRIORITY] [-t TAG] TITLE [BODY]" >&2; exit 2 ;;
+  esac
+done
+shift $((OPTIND - 1))
+[[ $# -ge 1 ]] || { echo "usage: notify [-p PRIORITY] [-t TAG] TITLE [BODY]" >&2; exit 2; }
+title="$1"
+body="${2:-}"
+
+# shellcheck disable=SC1090
+[[ -f "$HOME/.notify.local" ]] && . "$HOME/.notify.local"
+
+delivered=0
+
+case "$(uname -s)" in
+  Darwin)
+    if osascript -e 'on run argv' \
+                 -e 'display notification (item 2 of argv) with title (item 1 of argv)' \
+                 -e 'end run' "$title" "$body" 2>/dev/null; then
+      delivered=1
+    fi
+    ;;
+  Linux)
+    if [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]] && command -v notify-send >/dev/null; then
+      urgency=normal
+      case "$priority" in low|min) urgency=low ;; high|urgent|max) urgency=critical ;; esac
+      notify-send -u "$urgency" "$title" "$body" 2>/dev/null && delivered=1
+    fi
+    ;;
+esac
+
+if [[ -n "${NTFY_URL:-}" ]]; then
+  headers=(-H "Title: [$(hostname -s)] $title" -H "Priority: $priority")
+  [[ -n "$tag" ]] && headers+=(-H "Tags: $tag")
+  [[ -n "${NTFY_TOKEN:-}" ]] && headers+=(-H "Authorization: Bearer $NTFY_TOKEN")
+  if curl -fsS -m 10 -o /dev/null "${headers[@]}" -d "$body" "$NTFY_URL"; then
+    delivered=1
+  else
+    echo "notify: ntfy push failed" >&2
+  fi
+fi
+
+if (( delivered == 0 )); then
+  echo "notify: no channel delivered: $title" >&2
+  exit 1
+fi

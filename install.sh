@@ -169,6 +169,10 @@ if [ ! -f "$HOME/.repos.local" ]; then
   cp "$DOTFILES_DIR/repos.local.example" "$HOME/.repos.local"
   echo "  copied repos.local.example → ~/.repos.local (edit, then run clone-repos)"
 fi
+if [ ! -f "$HOME/.notify.local" ]; then
+  cp "$DOTFILES_DIR/notify.local.example" "$HOME/.notify.local"
+  echo "  copied notify.local.example → ~/.notify.local (set NTFY_URL for pushes)"
+fi
 
 # ─── Legacy cleanup ───────────────────────────────────────────
 if [ -f "$HOME/.git_template/HEAD" ] && \
