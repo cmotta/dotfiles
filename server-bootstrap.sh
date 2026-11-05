@@ -125,6 +125,10 @@ fi
 # ─── 6. Forge logins (done by you, once) ─────────────────────
 # gh and glab store the token and act as git's credential helper for HTTPS
 # clones, so no PAT is pasted here. Run the logins after the bootstrap.
+# Both write the helper into ~/.gitconfig, which is the dotfiles symlink, so
+# move those [credential] lines into ~/.gitconfig.local and `git checkout
+# gitconfig` afterwards. On a headless box glab's web login needs its
+# callback tunnelled: `ssh -L 7171:127.0.0.1:7171 HOST` from the laptop.
 
 if gh auth status &>/dev/null; then
   info "GitHub auth"; skip
@@ -134,7 +138,7 @@ fi
 if has glab && glab auth status &>/dev/null; then
   info "GitLab auth"; skip
 else
-  info "GitLab auth: run  glab auth login   (choose HTTPS, git credential helper: yes)"
+  info "GitLab auth: run  glab auth login   (HTTPS, git credential helper: yes; see §6 for the headless tunnel)"
 fi
 
 # ─── 7. Clone dotfiles and run install.sh ─────────────────────
