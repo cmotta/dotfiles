@@ -314,8 +314,8 @@ if [ "$OS" = "macos" ]; then
           "$plist" > "$resolved"
       echo "  wrote  $resolved"
       if launchctl print "gui/$(id -u)/$label" &>/dev/null; then
-        echo "  $label loaded — apply changes with:"
-        echo "    cp \"$resolved\" \"$agent\" && launchctl kickstart -k gui/$(id -u)/$label"
+        echo "  $label loaded — apply changes with (kickstart keeps the old plist):"
+        echo "    cp \"$resolved\" \"$agent\" && launchctl bootout gui/$(id -u)/$label && launchctl bootstrap gui/$(id -u) \"$agent\""
       else
         echo "  To start $label:"
         echo "    cp \"$resolved\" \"$agent\" && launchctl bootstrap gui/$(id -u) \"$agent\""
