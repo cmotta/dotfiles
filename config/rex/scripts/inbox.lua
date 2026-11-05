@@ -117,5 +117,7 @@ rex.on("block_closed", function(ctx, ev)
 end)
 
 rex.on("session_destroyed", function(ctx, ev)
-  session_labels[ctx.session_id] = nil
+  -- A server event: the session is in ev, not ctx.
+  local id = ev.session_id or ctx.session_id
+  if id then session_labels[id] = nil end
 end)
