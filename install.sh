@@ -286,36 +286,41 @@ if [ "$OS" = "macos" ]; then
   fi
 fi
 
-# ─── Rex inbox (macOS) ────────────────────────────────────────
-# Keeps config/rex/scripts/inbox.lua running against the Rex app's server so
-# a pane that needs me rings the desktop. Same shape as the Caddy agent: the
-# plist's __REX_*__ placeholders are baked to absolute paths here. The Linux
-# counterpart is config/rex/systemd/rex-inbox.service, linked above.
+# ─── Rex agents (macOS) ───────────────────────────────────────
+# Keeps config/rex/scripts running against the Rex app's server: the inbox
+# (a pane that needs me rings the desktop) and the two-minute program save.
+# Same shape as the Caddy agent: each plist's __REX_*__ placeholders are
+# baked to absolute paths here. Linux uses config/rex/systemd, linked above.
 if [ "$OS" = "macos" ]; then
   echo ""
-  echo "Setting up Rex inbox..."
+  echo "Setting up Rex agents..."
   rex_bin="$(command -v rex 2>/dev/null || true)"
   [ -n "$rex_bin" ] || rex_bin="$HOME/Library/Application Support/com.superlogical.rex/RexServer/Versions/Current/Rex Server.app/Contents/MacOS/rex"
   if [ ! -x "$rex_bin" ]; then
     echo "  rex not installed — get the app from https://superlogical.com"
   else
-    resolved="$DOTFILES_DIR/config/rex/launchd/local.rex-inbox.resolved.plist"
-    agent="$HOME/Library/LaunchAgents/local.rex-inbox.plist"
     mkdir -p "$HOME/Library/Logs"
-    sed -e "s#__REX_BIN__#$rex_bin#" \
-        -e "s#__REX_SCRIPT__#$HOME/.config/rex/scripts/inbox.lua#" \
-        -e "s#__REX_PATH__#$HOME/.bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin#" \
-        -e "s#__REX_LOG__#$HOME/Library/Logs/rex-inbox.log#" \
-        "$DOTFILES_DIR/config/rex/launchd/local.rex-inbox.plist" > "$resolved"
-    echo "  wrote  $resolved"
-    if launchctl print "gui/$(id -u)/local.rex-inbox" &>/dev/null; then
-      echo "  LaunchAgent already loaded — apply changes with:"
-      echo "    cp \"$resolved\" \"$agent\" && launchctl kickstart -k gui/$(id -u)/local.rex-inbox"
-    else
-      echo "  To start it:"
-      echo "    cp \"$resolved\" \"$agent\""
-      echo "    launchctl bootstrap gui/$(id -u) \"$agent\""
-    fi
+    for plist in "$DOTFILES_DIR/config/rex/launchd/"*.plist; do
+      case "$plist" in *.resolved.plist) continue ;; esac
+      label="$(basename "$plist" .plist)"
+      script="$HOME/.config/rex/scripts/${label#local.rex-}.lua"
+      [ "$label" = "local.rex-save" ] && script="$HOME/.config/rex/scripts/sessions.lua"
+      resolved="$DOTFILES_DIR/config/rex/launchd/$label.resolved.plist"
+      agent="$HOME/Library/LaunchAgents/$label.plist"
+      sed -e "s#__REX_BIN__#$rex_bin#" \
+          -e "s#__REX_SCRIPT__#$script#" \
+          -e "s#__REX_PATH__#$HOME/.bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin#" \
+          -e "s#__REX_LOG__#$HOME/Library/Logs/$label.log#" \
+          "$plist" > "$resolved"
+      echo "  wrote  $resolved"
+      if launchctl print "gui/$(id -u)/$label" &>/dev/null; then
+        echo "  $label loaded — apply changes with:"
+        echo "    cp \"$resolved\" \"$agent\" && launchctl kickstart -k gui/$(id -u)/$label"
+      else
+        echo "  To start $label:"
+        echo "    cp \"$resolved\" \"$agent\" && launchctl bootstrap gui/$(id -u) \"$agent\""
+      fi
+    done
   fi
 fi
 

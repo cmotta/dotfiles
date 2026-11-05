@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  macOS LaunchAgent that records the program running in each Rex pane every
+  two minutes (config/rex/scripts/sessions.lua op=save), the counterpart of
+  rex-save.timer on Linux. After an app upgrade or a crash, `rx restore run`
+  types them back. Placeholders are resolved by install.sh.
+-->
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>local.rex-save</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>__REX_BIN__</string>
+		<string>do</string>
+		<string>__REX_SCRIPT__</string>
+		<string>op=save</string>
+		<string>--autostart=false</string>
+	</array>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>PATH</key>
+		<string>__REX_PATH__</string>
+	</dict>
+	<key>StartInterval</key>
+	<integer>120</integer>
+	<key>StandardOutPath</key>
+	<string>__REX_LOG__</string>
+	<key>StandardErrorPath</key>
+	<string>__REX_LOG__</string>
+</dict>
+</plist>
