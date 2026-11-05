@@ -13,12 +13,11 @@ function M.session_call(method, args)
   return r, err
 end
 
--- Show a window in the app when the action came from the app. From the CLI
--- the app only obeys with Remote Control on (Settings > Rex Server), so skip.
+-- Show a window in the app. From a key or the palette this is the app
+-- asking itself; from the CLI or a script it needs Remote Control on in the
+-- app (Settings > Rex Server), otherwise the action fails after its work.
 function M.show_in_app(ctx, session_id, window_id)
-  if ctx.origin == "key" or ctx.origin == "palette" then
-    rex.client.queue("session.select", { session_id = session_id, window_id = window_id })
-  end
+  rex.client.queue("session.select", { session_id = session_id, window_id = window_id })
 end
 
 return M
