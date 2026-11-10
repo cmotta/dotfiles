@@ -26,3 +26,7 @@ fi
 
 unset _old_path
 [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+
+# Every shell, interactive or not, finds the user's own tools, so that
+# `ssh host some-command` works for what lives in ~/.local/bin.
+[[ -d "$HOME/.local/bin" ]] && path=("$HOME/.local/bin" $path)
