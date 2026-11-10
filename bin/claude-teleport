@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+# claude-teleport: move a Claude Code session to another machine's Rex server.
+#
+#   claude-teleport [-d REMOTE_DIR] [-i SESSION_ID] [-n] [-f] HOST
+#
+# Takes the newest session recorded for the current folder (or -i), points
+# it at REMOTE_DIR on HOST, copies the transcript there and opens a new Rex
+# session on HOST that resumes it. REMOTE_DIR defaults to the same path
+# relative to $HOME, so ~/Code/x moves to ~/Code/x on HOST.
+#
+# Paths under the old folder are rewritten to REMOTE_DIR in the transcript,
+# other paths under $HOME to HOST's home, and the first prompt tells the
+# model it moved. Refuses when the local repo
+# has uncommitted or unpushed work, when HOST's checkout is at another
+# commit, or when HOST already has the session (-f overrides all three).
+# -n prints the plan and leaves the rewritten transcript in a temp dir.
+#
+# Quit the local session first, or the two copies will diverge.
+set -euo pipefail
+
+usage() { echo "usage: claude-teleport [-d REMOTE_DIR] [-i SESSION_ID] [-n] [-f] HOST" >&2; exit 2; }
+
+remote_dir="" id="" dry=0 force=0
+while getopts "d:i:nfh" opt; do
+  case "$opt" in
+    d) remote_dir="$OPTARG" ;;
+    i) id="$OPTARG" ;;
+    n) dry=1 ;;
+    f) force=1 ;;
+    *) usage ;;
+  esac
+done
+shift $((OPTIND - 1))
+[[ $# -eq 1 ]] || usage
+host="$1"
+
+die() { echo "claude-teleport: $*" >&2; exit 1; }
+refuse() { if (( force )); then echo "claude-teleport: warning: $*" >&2; else die "$* (-f to go anyway)"; fi; }
+enc() { printf '%s' "$1" | sed 's/[^A-Za-z0-9]/-/g'; }
+
+src="$(pwd -P)"
+projects="$HOME/.claude/projects"
+src_proj="$projects/$(enc "$src")"
+[[ -d "$src_proj" ]] || die "no Claude sessions recorded for $src"
+
+if [[ -z "$id" ]]; then
+  newest="$(ls -t "$src_proj"/*.jsonl 2>/dev/null | head -1 || true)"
+  [[ -n "$newest" ]] || die "no Claude sessions recorded for $src"
+  id="$(basename "$newest" .jsonl)"
+fi
+transcript="$src_proj/$id.jsonl"
+[[ -f "$transcript" ]] || die "no session $id in $src_proj"
+
+# Local repo: everything the session saw must be reachable from HOST.
+local_head=""
+if git -C "$src" rev-parse --git-dir >/dev/null 2>&1; then
+  local_head="$(git -C "$src" rev-parse HEAD)"
+  [[ -z "$(git -C "$src" status --porcelain)" ]] || refuse "$src has uncommitted changes"
+  [[ -n "$(git -C "$src" branch -r --contains HEAD 2>/dev/null)" ]] || refuse "HEAD of $src is not pushed"
+fi
+
+remote_home="$(ssh "$host" 'printf %s "$HOME"')"
+if [[ -z "$remote_dir" ]]; then
+  [[ "$src" == "$HOME"/* ]] || die "$src is outside \$HOME, pass -d"
+  remote_dir="$remote_home/${src#"$HOME"/}"
+fi
+remote_dir="${remote_dir/#\~/$remote_home}"
+resolved="$(ssh "$host" "cd $(printf %q "$remote_dir") 2>/dev/null && pwd -P")" || die "$remote_dir does not exist on $host"
+remote_dir="$resolved"
+
+if [[ -n "$local_head" ]]; then
+  remote_head="$(ssh "$host" "git -C $(printf %q "$remote_dir") rev-parse HEAD 2>/dev/null" || true)"
+  [[ "$remote_head" == "$local_head" ]] ||
+    refuse "$host:$remote_dir is at ${remote_head:0:7}, not ${local_head:0:7}; run: ssh $host 'git -C $remote_dir fetch -q && git -C $remote_dir checkout $(git -C "$src" rev-parse --abbrev-ref HEAD) && git -C $remote_dir pull -q'"
+fi
+
+dst_proj="$remote_home/.claude/projects/$(enc "$remote_dir")"
+if ssh "$host" "test -e $(printf %q "$dst_proj/$id.jsonl")"; then
+  refuse "$host already has session $id"
+fi
+
+tmp="$(mktemp -d)"
+(( dry )) || trap 'rm -rf "$tmp"' EXIT
+python3 -I - "$transcript" "$tmp/$id.jsonl" "$src" "$remote_dir" "$HOME" "$remote_home" <<'PY'
+import sys
+src_file, dst_file, old, new, old_home, new_home = sys.argv[1:]
+with open(src_file, encoding="utf-8") as f:
+    text = f.read()
+# The folder first, so -d wins over the plain home mapping.
+text = text.replace(old, new).replace(old_home + "/", new_home + "/")
+text = text.replace('"cwd":"' + old_home + '"', '"cwd":"' + new_home + '"')
+with open(dst_file, "w", encoding="utf-8") as f:
+    f.write(text)
+PY
+
+note="This session was moved from $(hostname -s):$src to $host:$remote_dir with claude-teleport. Paths in earlier turns were rewritten to this machine. Files outside the folder, tools only the old machine had and local MCP servers may not exist here. Check git status and confirm where we are before continuing."
+
+cat <<EOF
+session   $id
+from      $src
+to        $host:$remote_dir
+copy to   $dst_proj/
+EOF
+
+if (( dry )); then
+  echo "dry run: rewritten transcript in $tmp/$id.jsonl"
+  exit 0
+fi
+
+ssh "$host" "mkdir -p $(printf %q "$dst_proj")"
+scp -q "$tmp/$id.jsonl" "$host:$(printf %q "$dst_proj/")"
+[[ -d "$src_proj/$id" ]] && scp -qr "$src_proj/$id" "$host:$(printf %q "$dst_proj/")"
+
+rex -S "$host" new "$(basename "$remote_dir")" -c "$remote_dir" -- claude --resume "$id" "$note"
+echo "resumed on $host. quit the local session if it is still open."
