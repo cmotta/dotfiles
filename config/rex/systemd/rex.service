@@ -13,8 +13,11 @@ Wants=network-online.target
 
 [Service]
 # Reachable from the tailnet on port 7297 through this host's tailscaled.
-# Only the node owner is admitted (default policy).
-ExecStart=/usr/bin/rex server run --extra-listen tailnet://:7297
+# The default admits only the node owner, and a tagged node has no owner,
+# so the listener would admit nobody and refuse to bind (Rex snapshots from
+# Nov 2026). Admit every caller tailscaled identifies instead; who can reach
+# the port at all is the tailnet ACL's decision.
+ExecStart=/usr/bin/rex server run --extra-listen tailnet://:7297 --tailnet-allow-identified
 # Record the running programs before the server goes down.
 ExecStop=/usr/bin/rex do %h/.config/rex/scripts/sessions.lua op=save
 Restart=on-failure
