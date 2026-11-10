@@ -247,13 +247,19 @@ PIN
   sudo apt update
 fi
 
-if ! has rex; then
+# Ubuntu's rex (1.14, Perl) sorts above ours (0.0.<epoch>). The pin makes
+# apt prefer ours, but unattended-upgrades ignores pins: when the candidate
+# comes from a repo it does not manage it installs the newest version from
+# the repos it does, which on 10 Nov 2026 replaced Rex with the Perl tool.
+# A hold is the one thing unattended-upgrades respects.
+if [[ "$(dpkg-query -W -f '${Version}' rex 2>/dev/null)" != 0.0.* ]]; then
   info "Installing Rex..."
-  sudo apt install -y rex
+  sudo apt install -y --allow-downgrades rex
 else
   info "Rex"
   skip
 fi
+sudo apt-mark hold rex >/dev/null
 
 if [ -f "$HOME/.config/systemd/user/rex.service" ]; then
   if systemctl --user is-active -q rex; then
