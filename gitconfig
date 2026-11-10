@@ -13,7 +13,7 @@
   ci = commit -v
   co = checkout
   st = status
-	lg = log --oneline --decorate --all --graph
+  lg = log --graph --oneline --pretty=format:\"%C(auto)%h%d %ad %s\" --date=relative
 	s = status -s
 [core]
   excludesfile = ~/.gitignore
@@ -32,3 +32,9 @@
   colorMoved = zebra
 [pull]
   rebase = true
+[credential "https://github.com"]
+	helper = 
+	helper = !gh auth git-credential
+[credential "https://gist.github.com"]
+	helper = 
+	helper = !gh auth git-credential
