@@ -63,3 +63,7 @@ if [ -d "$PNPM_HOME" ]; then
   path=($PNPM_HOME $path)
 fi
 # pnpm end
+
+fpath+=~/.zfunc; autoload -Uz compinit; compinit
+
+zstyle ':completion:*' menu select
