@@ -7,7 +7,7 @@
     "deny": [
       "Bash(sudo:*)",
       "Bash(rm -rf /:*)",
-      "Bash(rm -rf /*:*)",
+      "Bash(rm -rf /*)",
       "Bash(mkfs:*)",
       "Bash(dd if=:*)",
       "Bash(chmod 777:*)",
