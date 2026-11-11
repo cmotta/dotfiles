@@ -11,6 +11,7 @@ _rx() {
     'save:record the program running in each pane'
     'restore:type the saved programs back; add run to run them'
     'saved:show the saved record'
+    'teleport:resume this folder'"'"'s Claude session on another Rex host'
   )
   if (( CURRENT == 2 )); then
     _describe 'rx verb' verbs
@@ -29,6 +30,15 @@ _rx() {
          esac ;;
     run) shift 2 words; (( CURRENT -= 2 )); _normal ;;
     restore) (( CURRENT == 3 )) && _describe 'mode' '(run:type and run the commands)' ;;
+    teleport) shift words; (( CURRENT-- ))
+              _arguments -s \
+                '-d[folder on the host]:folder:' \
+                '-i[session ID]:session:_rx_claude_sessions' \
+                '-s[ssh host, if not the Rex label]:ssh host:_hosts' \
+                '-y[take the first exact match without asking]' \
+                '-n[dry run]' \
+                '-f[skip the safety checks]' \
+                '1:host:_rx_hosts' ;;
   esac
 }
 
@@ -36,6 +46,19 @@ _rx_sessions() {
   local -a sessions
   sessions=(. ${(f)"$(rex ls 2>/dev/null | awk 'NR>1 {print $1}')"})
   _describe 'session' sessions
+}
+
+_rx_hosts() {
+  local -a hosts
+  hosts=(${(f)"$(rex hosts 2>/dev/null | awk 'NR>1 && !seen[$2]++ {print $1}')"})
+  _describe 'Rex host' hosts
+}
+
+_rx_claude_sessions() {
+  local dir="$HOME/.claude/projects/${PWD//[^A-Za-z0-9]/-}"
+  local -a ids
+  ids=(${(f)"$(ls -t "$dir"/*.jsonl(N) 2>/dev/null | sed 's#.*/##; s#\.jsonl$##')"})
+  _describe -V 'session, newest first' ids
 }
 
 _rx_layouts() {

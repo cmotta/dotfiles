@@ -9,6 +9,7 @@
 #   rx save                             record the program running in each pane
 #   rx restore [run]                    type the saved programs back (run: and run them)
 #   rx saved                            show the record
+#   rx teleport [opts] HOST             resume this folder's Claude session on HOST
 
 function rx() {
   local verb="${1:-help}"; shift 2>/dev/null
@@ -22,7 +23,8 @@ function rx() {
     save)    rex do ~/.config/rex/scripts/sessions.lua op=save ;;
     restore) rex do ~/.config/rex/scripts/sessions.lua op=restore run="${1:-0}" ;;
     saved)   rex do ~/.config/rex/scripts/sessions.lua op=show ;;
-    help|*)  sed -n '4,12p' "${(%):-%x}" ;;
+    teleport) claude-teleport "$@" ;;
+    help|*)  sed -n '4,13p' "${(%):-%x}" ;;
   esac
 }
 
