@@ -11,7 +11,9 @@
 -- for it again.
 --
 -- Delivery goes through `notify` (bin/notify): the desktop on macOS, ntfy
--- where ~/.notify.local names a topic. On macOS a click on the banner goes
+-- where ~/.notify.local names a topic. Finished is routine: it pushes at low
+-- priority on the "sessions" channel, so it cannot bury a blocked pane or an
+-- alert from another job. On macOS a click on the banner goes
 -- to the pane (notify -x, bin/rex-goto, the goto action). It runs all the time as a launchd
 -- agent on macOS (config/rex/launchd) and a systemd user unit on Linux
 -- (config/rex/systemd); both restart it when the server goes away. On macOS
@@ -66,7 +68,7 @@ local function describe(record, elapsed)
     return app .. " failed" .. (detail and (": " .. detail) or ""), "high", "x"
   else
     local took = elapsed and string.format(" after %ds", elapsed) or ""
-    return app .. " finished" .. took .. (detail and (": " .. detail) or ""), "default", "white_check_mark"
+    return app .. " finished" .. took .. (detail and (": " .. detail) or ""), "low", "white_check_mark", "sessions"
   end
 end
 
@@ -75,8 +77,12 @@ local function notify(ctx, record, elapsed)
   local pane = block_label(ctx.session_id, ctx.block_id)
   if pane then title = title .. " / " .. pane end
   if host then title = host .. ": " .. title end
-  local body, priority, tag = describe(record, elapsed)
+  local body, priority, tag, channel = describe(record, elapsed)
   local argv = { notify_cmd, "-p", priority, "-t", tag }
+  if channel then
+    argv[#argv + 1] = "-c"
+    argv[#argv + 1] = channel
+  end
   if host then argv[#argv + 1] = "-l" end
   -- A click on the banner lands in the pane (bin/rex-goto, macOS only).
   local goto_cmd = "rex-goto " .. (host and ("-S " .. host .. " ") or "")

@@ -6,3 +6,8 @@
 # guess; a private one may also need a token.
 #NTFY_URL=https://ntfy.sh/change-me-to-a-long-random-topic
 #NTFY_TOKEN=
+#
+# Optional second topic for routine news (`notify -c sessions`: a program in
+# a Rex pane finished). Unset, it goes to NTFY_URL with everything else.
+# Subscribe to it muted, so alerts on the main topic stay audible.
+#NTFY_URL_SESSIONS=https://ntfy.sh/another-long-random-topic

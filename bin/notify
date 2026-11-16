@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # notify: send myself a short notification.
 #
-#   notify [-l] [-p low|default|high|urgent] [-t TAG] [-x COMMAND] TITLE [BODY]
+#   notify [-l] [-c CHANNEL] [-p low|default|high|urgent] [-t TAG] [-x COMMAND] TITLE [BODY]
 #
 # Delivers to every channel this machine has:
 #   - the desktop: terminal-notifier or osascript on macOS, notify-send on Linux
@@ -12,6 +12,9 @@
 # -l rings only this desktop and skips ntfy, for news another machine
 # already pushed. -x runs a shell command when the banner is clicked
 # (macOS with terminal-notifier only; it runs with this PATH).
+# -c names a channel for routine news that should not bury alerts: the push
+# goes to NTFY_URL_<CHANNEL> (upper case) when ~/.notify.local sets it, else
+# to NTFY_URL as before.
 # Exits 1 when nothing could deliver.
 set -euo pipefail
 
@@ -19,22 +22,31 @@ priority=default
 tag=""
 local_only=0
 on_click=""
-while getopts "lp:t:x:" opt; do
+channel=""
+while getopts "lc:p:t:x:" opt; do
   case "$opt" in
     l) local_only=1 ;;
+    c) channel="$OPTARG" ;;
     x) on_click="$OPTARG" ;;
     p) priority="$OPTARG" ;;
     t) tag="$OPTARG" ;;
-    *) echo "usage: notify [-l] [-p PRIORITY] [-t TAG] [-x COMMAND] TITLE [BODY]" >&2; exit 2 ;;
+    *) echo "usage: notify [-l] [-c CHANNEL] [-p PRIORITY] [-t TAG] [-x COMMAND] TITLE [BODY]" >&2; exit 2 ;;
   esac
 done
 shift $((OPTIND - 1))
-[[ $# -ge 1 ]] || { echo "usage: notify [-l] [-p PRIORITY] [-t TAG] [-x COMMAND] TITLE [BODY]" >&2; exit 2; }
+[[ $# -ge 1 ]] || { echo "usage: notify [-l] [-c CHANNEL] [-p PRIORITY] [-t TAG] [-x COMMAND] TITLE [BODY]" >&2; exit 2; }
 title="$1"
 body="${2:-}"
 
 # shellcheck disable=SC1090
 [[ -f "$HOME/.notify.local" ]] && . "$HOME/.notify.local"
+
+ntfy_url="${NTFY_URL:-}"
+if [[ -n "$channel" ]]; then
+  var="NTFY_URL_$(printf '%s' "$channel" | tr '[:lower:]-' '[:upper:]_')"
+  [[ "$var" =~ ^[A-Z0-9_]+$ ]] || { echo "notify: bad channel: $channel" >&2; exit 2; }
+  ntfy_url="${!var:-$ntfy_url}"
+fi
 
 delivered=0
 
@@ -63,11 +75,11 @@ case "$(uname -s)" in
     ;;
 esac
 
-if [[ -n "${NTFY_URL:-}" && $local_only -eq 0 ]]; then
+if [[ -n "$ntfy_url" && $local_only -eq 0 ]]; then
   headers=(-H "Title: [$(hostname -s)] $title" -H "Priority: $priority")
   [[ -n "$tag" ]] && headers+=(-H "Tags: $tag")
   [[ -n "${NTFY_TOKEN:-}" ]] && headers+=(-H "Authorization: Bearer $NTFY_TOKEN")
-  if curl -fsS -m 10 -o /dev/null "${headers[@]}" -d "$body" "$NTFY_URL"; then
+  if curl -fsS -m 10 -o /dev/null "${headers[@]}" -d "$body" "$ntfy_url"; then
     delivered=1
   else
     echo "notify: ntfy push failed" >&2
