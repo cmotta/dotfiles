@@ -7,8 +7,14 @@
 -- come. A pane going blocked or error notifies at once. Done notifies only
 -- when the work took at least done_after seconds (default 10), so a quick
 -- `rx run ls` stays quiet and a long build does not. Repeated reports of the
--- same state are ignored; a program must leave a state before it can ring
--- for it again.
+-- same state do not ring again; a program must leave a state before it can
+-- ring for it again.
+--
+-- Done waits settle seconds (default 30) before it rings. If the record
+-- left done by then (I looked at the pane, typed, or closed it), I am there
+-- and nothing is sent. The wait also lets the program add its one-line
+-- summary, which often comes a moment after done; with no summary the
+-- pane's title stands in, so the push says what the work was about.
 --
 -- Delivery goes through `notify` (bin/notify): the desktop on macOS, ntfy
 -- where ~/.notify.local names a topic. Finished is routine: it pushes at low
@@ -20,12 +26,13 @@
 -- install.sh also starts one agent per host in `rex hosts`, with host=LABEL,
 -- so panes on those servers ring this desktop too.
 --
--- Args: done_after=SECONDS   notify=COMMAND (default "notify")
+-- Args: done_after=SECONDS   settle=SECONDS   notify=COMMAND (default "notify")
 --       host=LABEL   when run against another server (rex -S LABEL do ...):
 --                    titles start with LABEL and only this desktop rings,
 --                    since that host's own inbox already pushes to the phone.
 
 local done_after = tonumber(rex.args.done_after) or 10
+local settle = tonumber(rex.args.settle) or 30
 local notify_cmd = rex.args.notify or "notify"
 local host = rex.args.host
 
@@ -53,9 +60,19 @@ local function block_label(session_id, block_id)
   return nil
 end
 
-local function describe(record, elapsed)
+-- The pane's title, for a done record that carries no summary.
+local function pane_title(ctx)
+  local r = rex.call("com.superlogical.terminal.title",
+    { session_id = ctx.session_id, block_id = ctx.block_id })
+  local t = r and r.title
+  if t and t ~= "" then return t end
+  return nil
+end
+
+local function describe(ctx, record, elapsed)
   local app = record.effective_app or record.app or "program"
   local detail = record.msg or record.title
+  if not detail and record.state == "done" then detail = pane_title(ctx) end
   if record.state == "blocked" then
     local waits = {
       permission = "needs permission",
@@ -77,7 +94,7 @@ local function notify(ctx, record, elapsed)
   local pane = block_label(ctx.session_id, ctx.block_id)
   if pane then title = title .. " / " .. pane end
   if host then title = host .. ": " .. title end
-  local body, priority, tag, channel = describe(record, elapsed)
+  local body, priority, tag, channel = describe(ctx, record, elapsed)
   local argv = { notify_cmd, "-p", priority, "-t", tag }
   if channel then
     argv[#argv + 1] = "-c"
@@ -102,16 +119,27 @@ rex.on("terminal.program_status_changed", function(ctx, ev)
   local key = ctx.block_id .. "/" .. (ev.id or "")
   local prev = seen[key]
   local now = os.time()
-  if prev and prev.state == record.state then return end
+  if prev and prev.state == record.state then
+    -- Same state again: keep the newest record, a summary may have arrived.
+    prev.record = record
+    return
+  end
 
   local started = (record.state == "working") and now or (prev and prev.started)
-  seen[key] = { state = record.state, started = started }
+  local entry = { state = record.state, started = started, record = record }
+  seen[key] = entry
 
   if record.state == "blocked" or record.state == "error" then
     notify(ctx, record, nil)
   elseif record.state == "done" and prev and prev.state == "working" then
     local elapsed = now - (prev.started or now)
-    if elapsed >= done_after then notify(ctx, record, elapsed) end
+    if elapsed < done_after then return end
+    local where = { session_id = ctx.session_id, block_id = ctx.block_id }
+    rex.after(settle, function()
+      -- Still this same done record: nobody looked. Anything else: skip.
+      if seen[key] ~= entry then return end
+      notify(where, entry.record, elapsed)
+    end)
   end
 end)
 
